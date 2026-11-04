@@ -1,0 +1,14 @@
+﻿@using DancingGoat.Models
+
+@model CheckoutViewModel
+
+@{
+    ViewBag.Title = HtmlLocalizer["Checkout"].Value;
+}
+
+<partial name="_CheckoutCustomer" model="Model" />
+
+@section scripts {
+    <script src="~/Scripts/checkoutSummary.js" defer></script>
+    <script src="~/Scripts/checkoutAddress.js" defer></script>
+}

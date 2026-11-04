@@ -1,0 +1,3 @@
+﻿namespace DancingGoat.Models;
+
+public sealed record CheckoutViewModel(CustomerViewModel Customer, CustomerAddressViewModel BillingAddress, ShippingAddressViewModel ShippingAddress, ShoppingCartViewModel ShoppingCart, PaymentShippingViewModel PaymentShipping);

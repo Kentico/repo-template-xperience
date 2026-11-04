@@ -1,0 +1,34 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <!-- Minimum Xperience version the libraries in src/ support. examples/Directory.Packages.props
+       overrides these for DancingGoat and adds its other Xperience packages. -->
+  <ItemGroup Label="Xperience">
+    <PackageVersion Include="Kentico.Xperience.Admin" Version="31.10.0" />
+    <PackageVersion Include="Kentico.Xperience.WebApp" Version="31.10.0" />
+  </ItemGroup>
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.6.4" />
+    <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.6.4" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.6.0" />
+  </ItemGroup>
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="NUnit" Version="5.0.0" />
+    <PackageVersion Include="NUnit.Analyzers" Version="4.15.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.1" />
+  </ItemGroup>
+  <ItemGroup Label="Transitive security pins">
+    <!-- Xperience 31.10.0 brings 10.0.0 via MailKit/MimeKit and Microsoft.Data.SqlClient (GHSA-2fmv-rv2c-59x7, GHSA-846f-f764-76mx). Remove when Xperience references a patched version. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
+  <ItemGroup Label="Analyzers">
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.35.0.4138" />
+  </ItemGroup>
+</Project>

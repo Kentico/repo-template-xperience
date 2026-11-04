@@ -1,0 +1,66 @@
+﻿@using DancingGoat.Helpers
+@using DancingGoat.PageTemplates
+@using DancingGoat.Models
+@using DancingGoat.Services
+@using DancingGoat.Widgets
+
+@inject WebPageUrlProvider webPageUrlProvider
+
+@model TemplateViewModel
+
+@{
+    Layout = "~/Views/Shared/_DancingGoatLayout.cshtml";
+    var viewModel = Model.GetTemplateModel<ArticleDetailViewModel>();
+
+    var hasRelatedArticles = viewModel.RelatedPages.Any();
+
+    var articlesPath = await webPageUrlProvider.ArticlesPageUrl();
+}
+
+<div class="page-head">
+    <div class="wrap">
+        <div class="crumb">
+            <a href="@articlesPath">&larr; @HtmlLocalizer["Back to articles"]</a>
+        </div>
+        <div class="article-hero">
+            @if (!string.IsNullOrEmpty(viewModel.TeaserUrl))
+            {
+                <div class="media">
+                    <img src="@Url.Content(viewModel.TeaserUrl)" alt="@viewModel.Title" title="@viewModel.Title" loading="lazy" />
+                </div>
+            }
+            <div>
+                <span class="date-line">@viewModel.PublicationDate.ToString("D")</span>
+                <ai-scope origin="@viewModel.GetAiProvenanceOrigin(nameof(ArticlePage.ArticleTitle))" label-position="After">
+                    <h1 class="display">@HeadingFormatter.Format(viewModel.Title)</h1>
+                </ai-scope>
+                @if (!string.IsNullOrEmpty(viewModel.Summary))
+                {
+                    <ai-scope origin="@viewModel.GetAiProvenanceOrigin(nameof(ArticlePage.ArticlePageSummary))" label-position="After">
+                        <p class="lede">@viewModel.Summary</p>
+                    </ai-scope>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="block-tight">
+    <div class="wrap">
+        <div class="article-layout">
+            <div class="article-main">
+                <ai-scope origin="@viewModel.GetAiProvenanceOrigin(nameof(ArticlePage.ArticlePageText))">
+                    <div class="prose">
+                        @Html.Raw(viewModel.Text)
+                    </div>
+                </ai-scope>
+                <editable-area area-identifier="main"
+                               area-options-allowed-widgets="new[] { SystemComponentIdentifiers.RICH_TEXT_WIDGET_IDENTIFIER, ComponentIdentifiers.CTA_BUTTON_WIDGET, KeyTakeawaysWidgetViewComponent.IDENTIFIER }" />
+            </div>
+            @if (hasRelatedArticles)
+            {
+                <partial name="~/Views/DancingGoatArticle/RelatedPages.cshtml" model="viewModel.RelatedPages" />
+            }
+        </div>
+    </div>
+</section>
