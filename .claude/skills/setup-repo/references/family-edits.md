@@ -1,29 +1,36 @@
 # Family edits
 
-Apply the rows for the selected family, plus the Example rows for an example repository, after `Rename-Template.ps1` succeeds. Where they conflict, the Example row wins. Every listed file is either edited as described or deleted.
+`Rename-Template.ps1` makes the edits under "Done by the script" from `-Family`, `-Example`, `-GitHubOrg`, and `-Author`. The edits under "By hand" are yours, after the script succeeds. Where a family row and the Example row conflict, the Example row wins.
 
-## Publishing
+## Done by the script
 
-| Family | Keep | Delete |
+### Publishing
+
+| Family | Kept | Deleted |
 | --- | --- | --- |
-| Kentico, Labs | `.azuredevops/`, `Directory.build.targets` (code signing), `azuresigntool` in `.config/dotnet-tools.json` | `.github/workflows/publish.yml` |
-| Community | `.github/workflows/publish.yml` | `.azuredevops/`, `Directory.build.targets`, `azuresigntool` entry |
-| Example (any family) | – | `.azuredevops/`, `Directory.build.targets`, `azuresigntool` entry, `.github/workflows/publish.yml`, `src/*.Libs.slnx` |
+| Kentico, Labs | `.azuredevops/`, `Directory.Build.targets` (code signing), `azuresigntool` in `.config/dotnet-tools.json` | `.github/workflows/publish.yml` |
+| Community | `.github/workflows/publish.yml` | `.azuredevops/`, `Directory.Build.targets`, `azuresigntool` entry |
+| Example (any family) | – | `.azuredevops/`, `Directory.Build.targets`, `azuresigntool` entry, `.github/workflows/publish.yml`, `src/*.Libs.slnx` |
 
-When `.azuredevops/` is deleted, also remove its file association in `.vscode/settings.json`. When `publish.yml` is kept, delete its header comment line about `.azuredevops/pipelines`.
+Blocks marked `template:azure:start` / `template:azure:end` go with `.azuredevops/` (VS Code file association and extension, the `publish.yml` header line).
 
-Example: also set `<IsPackable>false</IsPackable>` in the root `Directory.Build.props` and remove the package-only metadata there (`PackageLicenseExpression`, `PackageProjectUrl`, `PackageReleaseNotes`, `PackageIcon`, `PackageReadmeFile`, `PackageTags`, the `logo.png` / `README.md` pack items, and the Release-only symbol package `PropertyGroup`).
+Example: `<IsPackable>false</IsPackable>` is added to the root `Directory.Build.props`, and the blocks marked `template:package:start` / `template:package:end` are removed (package metadata, the `logo.png` / `README.md` pack items, symbol package settings).
 
-Community: tell the maintainer to create a nuget.org Trusted Publishing policy for the repository and `publish.yml`, and set the `NUGET_USER` repository variable. Releases publish on GitHub release.
+### Ownership
 
-## Ownership
+| Family | `Directory.Build.props` `Company` / `Authors` | `LICENSE.md` holder | `.github/CODEOWNERS` |
+| --- | --- | --- | --- |
+| Kentico, Labs | kept (`Kentico Software`) | kept | kept |
+| Community | `-Author`; `Trademark` removed | `-Author` | `* @<GitHubOrg>` |
 
-| Family | `Directory.Build.props` `Company` / `Authors` | `LICENSE.md` holder | `.github/CODEOWNERS` | `images/logo.png` |
-| --- | --- | --- | --- | --- |
-| Kentico, Labs | keep `Kentico Software` | keep | keep `@Kentico/platform-engineering` unless told otherwise | keep |
-| Community | author name; remove `Trademark` | author name | `* @<owner>` | ask the author for an icon; keep only if they accept the Kentico logo |
+## By hand
 
-## README support
+### Ownership
+
+- Kentico, Labs: ask which Kentico team owns the repository and set it in `.github/CODEOWNERS`; keep the existing owner only when the user confirms it.
+- Community: ask the author for a package icon to replace `images/logo.png`; keep the Kentico logo only if they accept it.
+
+### README support
 
 | Family | Badge | Support section |
 | --- | --- | --- |
@@ -36,3 +43,9 @@ Example (any family): the family's badge and support text apply. Describe the re
 Community: point "Contributing" at `docs/Contributing-Setup.md` and this repository's issues instead of Kentico's `CONTRIBUTING.md` / `CODE_OF_CONDUCT`.
 
 Keep the CI badge for every family.
+
+### Releasing
+
+`docs/Contributing-Setup.md` "Releasing": keep the publish pipeline list for the family (Azure DevOps for Kentico and Labs, GitHub Actions for Community) and delete the other. Example: delete the whole section.
+
+Community: tell the maintainer to create a nuget.org Trusted Publishing policy for the repository and `publish.yml`, and set the `NUGET_USER` repository variable.

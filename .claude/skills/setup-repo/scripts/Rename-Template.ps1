@@ -1,14 +1,18 @@
 <#
 .SYNOPSIS
-    Renames the repository template's sentinel tokens, files, and folders for a new project.
+    Renames the repository template's sentinel tokens, files, and folders for a new project,
+    and removes what the chosen family, example, and admin options do not use.
 
 .DESCRIPTION
     One-time setup step. Replaces every template token (see ../references/naming.md)
-    in tracked text files, renames files and folders, and regenerates
-    local-only secrets and ports. Fails if any template token remains afterwards.
+    in tracked text files, renames files and folders, prunes files and marked blocks
+    (see ../references/family-edits.md and ../references/remove-admin.md), regenerates
+    local-only secrets and ports, and formats the renamed C# files.
+    Fails if any template token or marker remains afterwards.
 
 .EXAMPLE
-    ./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family Labs -Name CoolThing [-Example]
+    ./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family Labs -Name CoolThing [-Example] [-NoAdmin]
+    ./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family Community -Name CoolThing -GitHubOrg jane-doe -Author "Jane Doe"
 #>
 [CmdletBinding()]
 param (
@@ -27,12 +31,19 @@ param (
     # Example source code repository (not a published library). Labs examples get "labs" in the repository slug
     [switch]$Example,
 
+    # The project has no administration UI: removes the .Admin project and everything that serves it
+    [switch]$NoAdmin,
+
     # Defaults to xperience-by-kentico-<name> (Labs example: xperience-by-kentico-labs-<name>; Community: xperience-community-<name>)
     [ValidatePattern('^[a-z0-9][a-z0-9-]*$')]
     [string]$RepoSlug,
 
-    # Defaults to Kentico; required for Community
+    # GitHub user or organization that owns the repository. Defaults to Kentico; required for Community
+    [ValidatePattern('^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$')]
     [string]$GitHubOrg,
+
+    # Community only, required: the author or company name for package metadata and LICENSE.md
+    [string]$Author,
 
     # Print the derived names and exit without changing files
     [switch]$Preview
@@ -54,10 +65,14 @@ $names = switch ($Family) {
 if ($Example -and $Family -eq 'Labs') { $names.Slug = "xperience-by-kentico-labs-$kebab" }
 if ($RepoSlug) { $names.Slug = $RepoSlug }
 
-if (-not $GitHubOrg) {
-    if ($Family -eq 'Community') { throw 'GitHubOrg is required for the Community family.' }
-    $GitHubOrg = 'Kentico'
+if ($Family -eq 'Community') {
+    if (-not $GitHubOrg) { throw 'GitHubOrg is required for the Community family.' }
+    if (-not $Author) { throw 'Author is required for the Community family.' }
 }
+elseif ($Author) {
+    throw 'Author applies to the Community family only; Kentico and Labs keep Kentico Software.'
+}
+if (-not $GitHubOrg) { $GitHubOrg = 'Kentico' }
 
 if (-not $DisplayName) { $DisplayName = $Name -creplace '(?<=[a-z])(?=[A-Z])|(?<=[A-Z0-9])(?=[A-Z][a-z])', ' ' }
 $productPrefix = switch ($Family) {
@@ -68,13 +83,16 @@ $productPrefix = switch ($Family) {
 
 $dotNet = $names.DotNet
 $moduleKey = "$($names.AdminOrg)-$($names.AdminProject)"
+$publishing = if ($Example) { 'none (example)' } elseif ($Family -eq 'Community') { 'GitHub Actions (publish.yml)' } else { 'Azure DevOps (.azuredevops)' }
 
 function Write-Names {
     Write-Host "Family:        $Family$(if ($Example) { ' (example)' })"
-    Write-Host ".NET name:     $dotNet (+ $dotNet.Admin, $dotNet.Tests)"
+    Write-Host ".NET name:     $dotNet (+ $(if (-not $NoAdmin) { "$dotNet.Admin, " })$dotNet.Tests)"
     Write-Host "Repository:    $GitHubOrg/$($names.Slug)"
-    Write-Host "Admin module:  $moduleKey"
+    Write-Host "Admin module:  $(if ($NoAdmin) { 'none (.Admin project removed)' } else { $moduleKey })"
     Write-Host "Product name:  $productPrefix`: $DisplayName"
+    Write-Host "Publishing:    $publishing"
+    if ($Author) { Write-Host "Author:        $Author" }
 }
 
 if ($Preview) {
@@ -116,22 +134,50 @@ function Get-TemplateFiles {
         Where-Object { $textExtensions -contains [IO.Path]::GetExtension($_) -or $textNames -contains [IO.Path]::GetFileName($_) }
 }
 
-# 1. Remove template-only CI
-$smokeWorkflow = Join-Path $root '.github/workflows/template-smoke.yml'
-if (Test-Path $smokeWorkflow) {
-    Remove-Item $smokeWorkflow
-    Write-Host 'Removed .github/workflows/template-smoke.yml'
+# Writes UTF-8 text, keeping the byte order mark the file already has (or lacks)
+function Set-Text($path, $text) {
+    $bom = $false
+    if (Test-Path -LiteralPath $path) {
+        $stream = [IO.File]::OpenRead($path)
+        try {
+            $head = [byte[]]::new(3)
+            $bom = $stream.Read($head, 0, 3) -eq 3 -and $head[0] -eq 0xEF -and $head[1] -eq 0xBB -and $head[2] -eq 0xBF
+        }
+        finally { $stream.Dispose() }
+    }
+    [IO.File]::WriteAllText($path, $text, [Text.UTF8Encoding]::new($bom))
 }
+
+# Rewrites a file through a transform; missing files and unchanged content are left alone
+function Update-File($path, [scriptblock]$transform) {
+    $full = Join-Path $root $path
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { return }
+    $content = [IO.File]::ReadAllText($full)
+    $updated = [string](& $transform $content)
+    if ($updated -cne $content) { Set-Text $full $updated }
+}
+
+function Remove-Path($path) {
+    $full = Join-Path $root $path
+    if (Test-Path -LiteralPath $full) {
+        Remove-Item -LiteralPath $full -Recurse -Force
+        Write-Host "Removed $path"
+    }
+}
+
+# 1. Remove template-only CI
+Remove-Path '.github/workflows/template-smoke.yml'
 
 # 2. Replace tokens in file contents (case-sensitive, ordered)
 foreach ($file in Get-TemplateFiles) {
-    $content = [IO.File]::ReadAllText((Join-Path $root $file))
+    $full = Join-Path $root $file
+    $content = [IO.File]::ReadAllText($full)
     $updated = $content
     foreach ($token in $tokens) {
         $updated = $updated.Replace($token[0], $token[1])
     }
     if ($updated -cne $content) {
-        [IO.File]::WriteAllText((Join-Path $root $file), $updated)
+        Set-Text $full $updated
         Write-Host "Updated $file"
     }
 }
@@ -156,18 +202,74 @@ foreach ($path in $paths) {
     }
 }
 
-# 4. Regenerate local-only secrets, ports, and license year
+# 4. Prune what the family, example, and admin choices do not use
 $dg = 'examples/DancingGoat'
+$usesAzure = $Family -ne 'Community' -and -not $Example
+
+if (-not $usesAzure) {
+    Remove-Path '.azuredevops'
+    Remove-Path 'Directory.Build.targets' # code signing
+    Update-File '.config/dotnet-tools.json' { param($c) $c -replace '\s*"azuresigntool":\s*\{[^}]*\},', '' }
+}
+if ($Family -ne 'Community' -or $Example) {
+    Remove-Path '.github/workflows/publish.yml'
+}
+if ($Example) {
+    Remove-Path "src/$dotNet.Libs.slnx"
+    Update-File 'Directory.Build.props' {
+        param($c)
+        $c -replace '([ \t]*)(<TargetFramework>[^<]+</TargetFramework>)(\r?\n)', '$1$2$3$1<IsPackable>false</IsPackable>$3'
+    }
+}
+if ($Family -eq 'Community') {
+    Update-File 'Directory.Build.props' {
+        param($c)
+        $c = $c -replace '<Company>[^<]*</Company>', "<Company>$([Security.SecurityElement]::Escape($Author))</Company>"
+        $c -replace '[ \t]*<Trademark>[^<]*</Trademark>\r?\n', ''
+    }
+    Update-File 'LICENSE.md' { param($c) $c -replace '(Copyright \(c\) \d{4}) [^\r\n]+', "`$1 $Author" }
+    Update-File '.github/CODEOWNERS' { param($c) $c -replace '(?m)^\* @\S+', "* @$GitHubOrg" }
+}
+if ($NoAdmin) {
+    Remove-Path "src/$dotNet.Admin"
+    # The sample admin page these test is gone; admin sign-in and shell tests stay
+    Remove-Path 'tests/e2e/admin/custom-template.spec.ts'
+    Remove-Path 'tests/e2e/admin/customTemplatePage.ts'
+
+    $adminProject = [regex]::Escape("$dotNet.Admin")
+    foreach ($solution in "$dotNet.slnx", "src/$dotNet.Libs.slnx") {
+        Update-File $solution { param($c) $c -replace "[ \t]*<Project Path=`"[^`"]*$adminProject\.csproj`" />\r?\n", '' }
+    }
+    Update-File "$dg/DancingGoat.csproj" { param($c) $c -replace "[ \t]*<ProjectReference Include=`"[^`"]*$adminProject\.csproj`" />\r?\n", '' }
+    Update-File "$dg/appsettings.Development.json" {
+        param($c) $c -replace ',\s*"CMSAdminClientModuleSettings":\s*\{[^{}]*\{[^{}]*\}[^{}]*\}', ''
+    }
+    Update-File '.vscode/tasks.json' { param($c) $c -replace '\s*\{[^{}]*"type":\s*"npm"[^{}]*\},?', '' }
+    Update-File 'README.md' { param($c) $c.Replace("dotnet add package $dotNet.Admin", "dotnet add package $dotNet") }
+}
+
+# Marked blocks: the lines from "template:<tag>:start" through "template:<tag>:end".
+# A removed tag loses its blocks; a kept tag loses only the marker lines.
+$removedTags = @()
+if ($NoAdmin) { $removedTags += 'admin' }
+if (-not $usesAzure) { $removedTags += 'azure' }
+if ($Example) { $removedTags += 'package' }
+
+foreach ($file in Get-TemplateFiles) {
+    Update-File $file {
+        param($c)
+        if ($c -notmatch 'template:\w+:(start|end)') { return $c }
+        foreach ($tag in $removedTags) {
+            $c = [regex]::Replace($c, "(?m)^[^\r\n]*template:${tag}:start[^\r\n]*\r?\n[\s\S]*?^[^\r\n]*template:${tag}:end[^\r\n]*(\r?\n|\z)", '')
+        }
+        [regex]::Replace($c, '(?m)^[^\r\n]*template:\w+:(start|end)[^\r\n]*(\r?\n|\z)', '')
+    }
+}
+
+# 5. Regenerate local-only secrets, ports, and license year
 $appPort = Get-Random -Minimum 40000 -Maximum 60000
 $clientPort = Get-Random -Minimum 3010 -Maximum 3100
 $secret = "mcp_secret_$([guid]::NewGuid().ToString().ToUpperInvariant())"
-
-function Update-File($path, [scriptblock]$transform) {
-    $full = Join-Path $root $path
-    if (-not (Test-Path $full)) { return }
-    $content = [IO.File]::ReadAllText($full)
-    [IO.File]::WriteAllText($full, (& $transform $content))
-}
 
 foreach ($project in "$dg/DancingGoat.csproj", 'examples/AppHost/AppHost.csproj') {
     Update-File $project { param($c) $c -replace '<UserSecretsId>[^<]+</UserSecretsId>', "<UserSecretsId>$([guid]::NewGuid())</UserSecretsId>" }
@@ -202,19 +304,30 @@ Get-ChildItem src -Recurse -Filter webpack.config.js -File | Where-Object FullNa
     Update-File ([IO.Path]::GetRelativePath($root, $_.FullName)) { param($c) $c -replace 'port: \d+', "port: $clientPort" }
 }
 
-# 5. Verify no template tokens remain
+# 6. Format the renamed C#: a new root namespace changes how using directives group.
+# Folder mode needs no restore.
+foreach ($folder in 'src', 'tests') {
+    dotnet format whitespace $folder --folder
+    if ($LASTEXITCODE -ne 0) { throw "dotnet format failed in $folder ($LASTEXITCODE)" }
+}
+
+# 7. Verify no template tokens, markers, or removed admin references remain
+$patterns = @('(?i)repo[- ]?template', 'template:\w+:(start|end)')
+if ($NoAdmin) { $patterns += [regex]::Escape("$dotNet.Admin"), [regex]::Escape($moduleKey) }
+
 $leftovers = Get-TemplateFiles | ForEach-Object {
     if ((Split-Path $_ -Leaf) -match '(?i)repo[- ]?template') { "$_ (path)" }
-    Select-String -LiteralPath $_ -Pattern '(?i)repo[- ]?template' | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
+    # Case-sensitive: lock files keep the lowercase admin project name until the next restore
+    Select-String -LiteralPath $_ -Pattern $patterns -CaseSensitive | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
 }
 
 Write-Host ''
 Write-Names
-Write-Host "Ports:         app $appPort, admin client $clientPort"
+Write-Host "Ports:         app $appPort$(if (-not $NoAdmin) { ", admin client $clientPort" })"
 
 if ($leftovers) {
     Write-Host ''
-    Write-Host 'Template tokens remain:' -ForegroundColor Red
+    Write-Host 'Template tokens, markers, or admin references remain:' -ForegroundColor Red
     $leftovers | ForEach-Object { Write-Host "  $_" }
     exit 1
 }

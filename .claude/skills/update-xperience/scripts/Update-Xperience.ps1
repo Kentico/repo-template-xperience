@@ -100,6 +100,20 @@ function Invoke-Native([scriptblock]$command, [int[]]$AllowedExitCodes = @(0)) {
     }
 }
 
+# Copies a tree, skipping the named directories and files at any depth
+function Copy-Tree($source, $destination, [string[]]$ExcludeDirectories = @(), [string[]]$ExcludeFiles = @()) {
+    New-Item -ItemType Directory $destination -Force | Out-Null
+    foreach ($item in Get-ChildItem -LiteralPath $source -Force) {
+        if ($item.PSIsContainer) {
+            if ($ExcludeDirectories -contains $item.Name) { continue }
+            Copy-Tree $item.FullName (Join-Path $destination $item.Name) $ExcludeDirectories $ExcludeFiles
+        }
+        elseif ($ExcludeFiles -notcontains $item.Name) {
+            Copy-Item -LiteralPath $item.FullName -Destination (Join-Path $destination $item.Name) -Force
+        }
+    }
+}
+
 function New-Pristine($templateVersion, $name) {
     # Private template hive per version: leaves the user's installed templates alone and avoids
     # "Sequence contains more than one matching element" when the global hive has duplicate entries
@@ -173,8 +187,7 @@ if ($updateDancingGoat) {
     try {
         function Sync-Tree($source) {
             Get-ChildItem $merge -Force | Where-Object Name -NE '.git' | Remove-Item -Recurse -Force
-            robocopy $source $merge /E /XD bin obj node_modules .git /NFL /NDL /NJH /NJS /NP | Out-Null
-            if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
+            Copy-Tree $source $merge -ExcludeDirectories bin, obj, node_modules, .git
             Set-Content (Join-Path $merge '.gitattributes') '* text=auto eol=lf' -NoNewline
             git add -A --renormalize . 2>$null
             git add -A 2>$null
@@ -213,8 +226,7 @@ if ($updateDancingGoat) {
     $dgPath = Join-Path $root 'examples/DancingGoat'
     git -C $root ls-files -z -- examples/DancingGoat | ForEach-Object { $_ -split "`0" } | Where-Object { $_ } |
         ForEach-Object { Remove-Item (Join-Path $root $_) -Force }
-    robocopy $merge $dgPath /E /XD .git /XF .gitattributes /NFL /NDL /NJH /NJS /NP | Out-Null
-    if ($LASTEXITCODE -ge 8) { throw "robocopy failed: $LASTEXITCODE" }
+    Copy-Tree $merge $dgPath -ExcludeDirectories .git -ExcludeFiles .gitattributes
     Get-ChildItem $dgPath -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending |
         Where-Object { -not (Get-ChildItem $_.FullName -Force) } | Remove-Item
 

@@ -3,7 +3,9 @@
     "ms-dotnettools.csdevkit",
     "editorconfig.editorconfig",
     "davidanson.vscode-markdownlint",
-    "esbenp.prettier-vscode",
-    "ms-azure-devops.azure-pipelines"
+    // template:azure:start
+    "ms-azure-devops.azure-pipelines",
+    // template:azure:end
+    "esbenp.prettier-vscode"
   ]
 }

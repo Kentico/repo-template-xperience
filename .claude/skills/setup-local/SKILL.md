@@ -45,7 +45,7 @@ Run `dotnet run --project examples/DancingGoat --no-build -- --kxp-db-status --f
 
 ## 7. Set channel domains
 
-The new database's channel domains don't match the local site, so emails send with broken links. Start the site in the background (`aspire run`, or `dotnet run --project examples/DancingGoat`) and, with the `xperience-management-mcp` server, set every website channel's domain and every email channel's service domain to `localhost:<port>` from `applicationUrl` in `examples/DancingGoat/Properties/launchSettings.json` (no scheme). Done when the MCP returns that value for each of those channels.
+The new database's channel domains don't match the local site, so emails send with broken links. Start the site in the background (`aspire run`, or `dotnet run --project examples/DancingGoat`) and wait until `<applicationUrl>/admin` responds. The `xperience-management-mcp` server only connects while the site is running: if its tools are missing or its connection failed when the session started, reconnect it now (Claude Code: `/mcp`; otherwise ask the user to reconnect it or restart the agent session). Then, with that server, set every website channel's domain and every email channel's service domain to `localhost:<port>` from `applicationUrl` in `examples/DancingGoat/Properties/launchSettings.json` (no scheme). Done when the MCP returns that value for each of those channels.
 
 ## 8. Report
 

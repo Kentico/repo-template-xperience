@@ -8,16 +8,18 @@ The requirements to setup, develop, and build this project are listed below.
 
 ### .NET Runtime
 
-.NET SDK 10.0 or newer
+The exact .NET SDK version in `global.json`
 
 - <https://dotnet.microsoft.com/en-us/download/dotnet/10.0>
-- See `global.json` file for specific SDK requirements
+- The version is pinned (`rollForward: disable`) because the committed NuGet lock files depend on it. To move to a newer SDK, change `global.json` and run `dotnet restore --force-evaluate`, then commit both.
 
 ### Node.js Runtime
 
 - [Node.js](https://nodejs.org/en/download) LTS or newer
 - [NVM for Windows](https://github.com/coreybutler/nvm-windows) or [NVM for macOS](https://github.com/nvm-sh/nvm) to manage multiple installed versions of Node.js
+<!-- template:admin:start -->
 - See `engines` in `src/Kentico.Xperience.RepoTemplate.Admin/Client/package.json` for specific version requirements
+<!-- template:admin:end -->
 
 ### Database
 
@@ -99,3 +101,25 @@ Playwright tests for the live site and the administration live in `tests/e2e`; t
      filled from git diff and CI evidence instead of writing the description by hand.
 
 1. This repository uses `lf` line endings for text files. EditorConfig and Git enforce this on all platforms; no Git line-ending override is needed.
+
+## Releasing
+
+---Keep the steps for how this repository publishes: Azure DevOps (Kentico and Labs) or GitHub Actions (Community). Delete the other list, and this whole section for an example repository.---
+
+The package version comes from `VersionPrefix` and `VersionSuffix` in `Directory.Build.props`. A release is that version, published from `main`.
+
+1. Set `VersionPrefix` to the new version. For a pre-release, set `VersionSuffix` to `prerelease-1` and raise the number for each further pre-release of the same version.
+1. Update the version matrix in `README.md` when the supported Xperience versions change.
+1. Merge the change to `main` through a pull request.
+1. Run the publish pipeline for `main` (below) and confirm the packages on nuget.org.
+1. Test the pre-release in a real project. When it is good, remove the `VersionSuffix` value, merge, and run the publish pipeline again for the full release.
+
+Publish pipeline, Kentico and Labs (Azure DevOps):
+
+1. Run the `.azuredevops/pipelines/build-and-release.yml` pipeline for `main`. It builds, signs, packs, and after approval pushes the packages to nuget.org.
+1. After a successful full release, create the GitHub release and tag `v<version>` on the released commit, with generated release notes.
+
+Publish pipeline, Community (GitHub Actions):
+
+1. Run the **Publish: NuGet** workflow for `main` (**Actions** > **Publish: NuGet** > **Run workflow**, or `gh workflow run publish.yml --ref main`). It builds, tests, packs, and pushes the packages to nuget.org, then creates the GitHub release and tag `v<version>` with generated release notes. A version with a suffix becomes a GitHub pre-release.
+1. A version that is already on nuget.org fails the push: raise the version instead of rerunning.

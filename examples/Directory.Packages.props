@@ -6,12 +6,12 @@
 
   <ItemGroup Label="Xperience">
     <!-- Update: declared in the root for src/ -->
-    <PackageVersion Update="Kentico.Xperience.Admin" Version="31.10.0" />
-    <PackageVersion Update="Kentico.Xperience.WebApp" Version="31.10.0" />
+    <PackageVersion Update="Kentico.Xperience.Admin" Version="31.10.3" />
+    <PackageVersion Update="Kentico.Xperience.WebApp" Version="31.10.3" />
     <!-- Include: DancingGoat only -->
-    <PackageVersion Include="Kentico.Xperience.AzureStorage" Version="31.10.0" />
-    <PackageVersion Include="Kentico.Xperience.ImageProcessing" Version="31.10.0" />
-    <PackageVersion Include="Kentico.Xperience.ManagementApi" Version="31.10.0" />
-    <PackageVersion Include="Kentico.Xperience.Mjml" Version="31.10.0" />
+    <PackageVersion Include="Kentico.Xperience.AzureStorage" Version="31.10.3" />
+    <PackageVersion Include="Kentico.Xperience.ImageProcessing" Version="31.10.3" />
+    <PackageVersion Include="Kentico.Xperience.ManagementApi" Version="31.10.3" />
+    <PackageVersion Include="Kentico.Xperience.Mjml" Version="31.10.3" />
   </ItemGroup>
 </Project>
