@@ -13,7 +13,7 @@ To set up a new repository from this template:
 
 - [Git](https://git-scm.com/downloads)
 - [PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)
-- [.NET SDK](https://dotnet.microsoft.com/download/dotnet/10.0), version in `global.json`
+- [.NET SDK](https://dotnet.microsoft.com/download/dotnet/10.0), the exact version in `global.json`
 - [Node.js](https://nodejs.org/en/download) 24+ (the Release build of the `.Admin` project runs npm)
 - An AI coding agent that runs skills from `.claude/skills/`, such as [Claude Code](https://claude.com/claude-code) or [GitHub Copilot](https://github.com/features/copilot)
 
@@ -30,6 +30,7 @@ Running the sample site needs more (SQL Server, Docker, Aspire). See [Contributi
    - name (`CoolThing`) and display name (`Cool Thing`)
    - one-sentence description
    - whether it extends the Xperience administration (keeps or removes the `.Admin` project)
+   - Community only: the GitHub owner and the author name
 5. Accept the previewed names. The skill renames projects, removes unused files, rewrites the docs, then builds and tests.
 6. Fill in the placeholders the skill lists, review the changes, and commit.
 7. Run the `setup-local` skill to create the local database and run the sample site.
@@ -65,7 +66,7 @@ Running the sample site needs more (SQL Server, Docker, Aspire). See [Contributi
 
 | Xperience Version | Library Version |
 | ----------------- | --------------- |
-| >= 31.10.0        | 1.0.0           |
+| >= 31.10.3        | 1.0.0           |
 
 ### Dependencies
 

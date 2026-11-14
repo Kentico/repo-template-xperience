@@ -42,11 +42,13 @@ One short paragraph: what changed and why it matters.
 - <Single-line change>
 - <Single-line change>
 
+<!-- template:admin:start -->
 ### Admin UI / Client
 
 - <Single-line change>
 - <Single-line change>
 
+<!-- template:admin:end -->
 ### Sample / Example Apps
 
 - <Single-line change>

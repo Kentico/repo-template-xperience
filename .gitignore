@@ -2,6 +2,9 @@
 
 **/wwwroot/cache.json
 
+# Local agent settings
+.claude/settings.local.json
+
 ### Xbk additions end
 
 ## Ignore Visual Studio temporary files, build results, and
@@ -134,7 +137,9 @@ node_modules
 segments_2i
 
 # Generated files
+# template:admin:start
 **/Client/dist/*
+# template:admin:end
 
 **/CMSModules/WebFarm/*
 

@@ -1,15 +1,18 @@
+# template:azure:start
 # Community family only. Kentico families publish through .azuredevops/pipelines.
+# template:azure:end
+# Run manually (Actions > Publish: NuGet > Run workflow) after setting the version in
+# Directory.Build.props. See "Releasing" in docs/Contributing-Setup.md.
 # Requires a nuget.org Trusted Publishing policy for this repository and workflow,
 # and a NUGET_USER repository variable set to the nuget.org account name.
 name: "Publish: NuGet"
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 permissions:
-  contents: read
-  id-token: write
+  contents: write # creates the GitHub release and tag
+  id-token: write # nuget.org Trusted Publishing
 
 jobs:
   publish:
@@ -25,24 +28,28 @@ jobs:
       DOTNET_NOLOGO: 1
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
 
+      # template:admin:start
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: src/Kentico.Xperience.RepoTemplate.Admin/Client/package-lock.json
+      # template:admin:end
 
       - name: Restore
         run: dotnet restore --locked-mode
 
+      # template:admin:start
       # Release build runs npm ci and npm run build for the admin client
+      # template:admin:end
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
@@ -58,7 +65,7 @@ jobs:
 
       - name: NuGet login (OIDC)
         id: nuget_login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ vars.NUGET_USER }}
 
@@ -66,5 +73,16 @@ jobs:
         run: |
           dotnet nuget push nupkg/*.nupkg `
             --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" `
-            --source https://api.nuget.org/v3/index.json `
-            --skip-duplicate
+            --source https://api.nuget.org/v3/index.json
+
+      # Tags the published commit with the package version; a version with a suffix is a pre-release
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $package = Get-ChildItem nupkg -Filter *.nupkg | Sort-Object { $_.Name.Length } | Select-Object -First 1
+          if ($package.BaseName -notmatch '\.(\d+\.\d+\.\d+(-.+)?)$') { throw "No version in $($package.Name)" }
+          $version = $Matches[1]
+          $arguments = @("v$version", '--target', '${{ github.sha }}', '--generate-notes')
+          if ($version -match '-') { $arguments += '--prerelease' }
+          gh release create @arguments

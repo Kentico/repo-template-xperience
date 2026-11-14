@@ -19,7 +19,7 @@ stages:
   - stage: Build
     jobs:
       - job: Build
-        displayName: Build, Sign, Test & Pack
+        displayName: Build, Sign & Pack
 
         variables:
           - group: Code Sign KV Auth
@@ -38,6 +38,7 @@ stages:
             inputs:
               useGlobalJson: true
 
+          # template:admin:start
           - task: PowerShell@2
             displayName: Set Node.js version from package.json
             inputs:
@@ -55,6 +56,7 @@ stages:
             displayName: "Install Node.js from package.json version"
             inputs:
               version: $(PACKAGE_JSON_NODE_VERSION)
+          # template:admin:end
 
           - task: DotNetCoreCLI@2
             displayName: Restore dotnet tools
@@ -98,9 +100,11 @@ stages:
                 - Core:
                   artifactName: "Kentico-Xperience-RepoTemplate"
                   projectPath: "src/Kentico.Xperience.RepoTemplate"
+                # template:admin:start
                 - Admin:
                   artifactName: "Kentico-Xperience-RepoTemplate-Admin"
                   projectPath: "src/Kentico.Xperience.RepoTemplate.Admin"
+                # template:admin:end
 
   - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
       - stage: PublishNuGetPackages

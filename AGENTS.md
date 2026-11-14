@@ -22,11 +22,13 @@ Skills in `.claude/skills/`:
 
 Delete this subsection when running `setup-repo`.
 
-While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up: project names, `README.md`, and `docs/` are placeholders. If `git remote get-url origin` is not the template's own repository (the `github.repository` in `.github/workflows/template-smoke.yml`), run `setup-repo` before other work. In the template's own repository, keep the placeholders: changes there improve the template.
+While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up: project names, `README.md`, and `docs/` are placeholders. Comment lines `template:<tag>:start` / `template:<tag>:end` (`admin`, `azure`, `package`) mark blocks that `setup-repo` removes for some choices; keep each pair around what it marks. If `git remote get-url origin` is not the template's own repository (the `github.repository` in `.github/workflows/template-smoke.yml`), run `setup-repo` before other work. In the template's own repository, keep the placeholders: changes there improve the template.
 
 ## Development
 
 - Before a commit, format with: `dotnet format --no-restore`
+- `global.json` pins the exact .NET SDK (`rollForward: disable`): the lock files record SDK-implicit packages, so a different SDK fails `dotnet restore --locked-mode`. To change the SDK, edit `global.json`, run `dotnet restore --force-evaluate`, and commit both.
+- Releases: `VersionPrefix` / `VersionSuffix` in `Directory.Build.props`, then the publish pipeline; see "Releasing" in `docs/Contributing-Setup.md`.
 - `examples/` is excluded from formatting by `examples/.editorconfig` (`generated_code = true`)
 - The Dancing Goat connection string and management API secret can be committed to source control because they are for local development only.
 - Package versions live only in `Directory.Packages.props` files; lock files are committed, so restore with `--force-evaluate` after changing versions or project references.

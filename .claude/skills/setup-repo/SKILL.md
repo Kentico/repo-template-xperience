@@ -18,22 +18,31 @@ Collect from the user:
 - **Name**: one PascalCase .NET identifier (`CoolThing`)
 - **Display name**: human-readable (`Cool Thing`)
 - **Description**: one sentence on what the library does
-- **Admin UI**: does it extend the Xperience administration? (keeps or removes the `.Admin` project)
+- **Admin UI**: does it extend the Xperience administration? (`-NoAdmin` removes the `.Admin` project)
 - Community only: GitHub owner, author name, repository slug if not `xperience-community-<name>`
 
-Run `./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family <Family> -Name <Name> -DisplayName "<Display name>" [-Example] [-GitHubOrg <owner>] [-RepoSlug <slug>] -Preview`. Show its output. Done when the user accepts every name.
+Run `./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family <Family> -Name <Name> -DisplayName "<Display name>" [-Example] [-NoAdmin] [-GitHubOrg <owner>] [-Author "<author>"] [-RepoSlug <slug>] -Preview`. Show its output. Done when the user accepts every name.
 
-## 3. Rename
+## 3. Rename and prune
 
-Run the same command without `-Preview`. Done when it exits 0. It deletes the template-only `.github/workflows/template-smoke.yml`, replaces tokens (including product names), renames files and folders, regenerates DancingGoat secrets and ports, sets the `LICENSE.md` year, and exits 1 listing any leftover token. On failure, fix the listed lines by hand; a rerun is safe but regenerates secrets and ports.
+Run the same command without `-Preview`. Done when it exits 0. It:
 
-## 4. Apply family edits
+- deletes the template-only `.github/workflows/template-smoke.yml`
+- replaces tokens (including product names) and renames files and folders
+- removes what the family and example choice do not use, and sets Community ownership ([references/family-edits.md](references/family-edits.md))
+- with `-NoAdmin`, removes the `.Admin` project and everything that serves it ([references/remove-admin.md](references/remove-admin.md))
+- strips the `template:<tag>:start` / `template:<tag>:end` marker lines
+- regenerates DancingGoat secrets and ports, sets the `LICENSE.md` year, and formats the renamed C#
 
-Follow the selected family's rows, plus the Example rows for an example, in [references/family-edits.md](references/family-edits.md). Done when every listed file for that family is edited or deleted.
+It exits 1 listing any leftover token, marker, or admin reference. On failure, fix the listed lines by hand; do not rerun on a renamed repository (restore it with `git checkout . && git clean -fd` first).
 
-## 5. Remove the admin project (no admin UI only)
+## 4. Finish the family edits
 
-Follow [references/remove-admin.md](references/remove-admin.md). Done when its grep check finds nothing.
+Do the edits the script leaves to you, listed under "By hand" in [references/family-edits.md](references/family-edits.md). Done when each is made.
+
+## 5. Finish removing the admin project (`-NoAdmin` only)
+
+Do the "By hand" edits in [references/remove-admin.md](references/remove-admin.md). Done when its grep check finds nothing.
 
 ## 6. Set descriptions
 
@@ -62,10 +71,10 @@ Write only facts the code or the user supplied. Done when no line in `README.md`
 Run, in order, each passing before the next:
 
 1. `dotnet restore --force-evaluate` (lock files change when projects were removed), then `dotnet restore --locked-mode`
-2. `dotnet build --configuration Release --no-restore`
-3. `dotnet test --configuration Release --no-build`
-4. `dotnet format --no-restore --verify-no-changes`
-5. `git grep --untracked -n -i -E "repo[- ]?template" -- ":!.claude/skills/setup-repo"` finds nothing
+2. `dotnet format --no-restore` (fixes formatting your own edits changed), then `dotnet format --no-restore --verify-no-changes`
+3. `dotnet build --configuration Release --no-restore`
+4. `dotnet test --configuration Release --no-build`
+5. `git grep --untracked -n -i -E "repo[- ]?template|template:[a-z]+:(start|end)" -- ":!.claude/skills/setup-repo"` finds nothing
 
 Done when all five pass. On failure fix the cause and restart from 1.
 
@@ -75,9 +84,9 @@ Delete `.claude/skills/setup-repo/` only after step 9 passes. Done when the fold
 
 ## 11. Report
 
-List: family, library or example, every resulting name, admin project kept or removed, files deleted in steps 4, 5, and 7, validation results, remaining placeholders, and the maintainer's next steps:
+List: family, library or example, every resulting name, admin project kept or removed, files deleted in steps 3 and 7, validation results, remaining placeholders, and the maintainer's next steps:
 
 - create the local environment with the `setup-local` skill
 - add the Xperience license key as the `XPERIENCE_LICENSE_KEY` repository secret and Dependabot secret, so the `e2e` CI job runs (it is skipped without it)
-- Community: Trusted Publishing policy on nuget.org and the `NUGET_USER` repository variable; package icon
+- Community: Trusted Publishing policy on nuget.org for the repository and `publish.yml`, and the `NUGET_USER` repository variable; package icon; releases follow "Releasing" in `docs/Contributing-Setup.md`
 - review `.github/CODEOWNERS`

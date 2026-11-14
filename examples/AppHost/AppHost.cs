@@ -88,8 +88,10 @@ if (!builder.Configuration.GetValue("Sql:UseExistingServer", true))
         .WaitForCompletion(databaseInit);
 }
 
+// template:admin:start
 // Admin client webpack dev server (DancingGoat's Development settings use Proxy mode)
 builder.AddJavaScriptApp("admin-client", Path.Combine(repositoryRoot, "src", "Kentico.Xperience.RepoTemplate.Admin", "Client"), "start")
     .WithNpm(install: true);
 
+// template:admin:end
 builder.Build().Run();
