@@ -19,7 +19,7 @@
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@babel/core": "7.29.7",
+    "@babel/core": "7.29.13",
     "@babel/plugin-transform-runtime": "7.29.7",
     "@babel/preset-env": "7.29.7",
     "@babel/preset-react": "7.29.7",
@@ -29,9 +29,9 @@
     "@types/react-dom": "18.3.7",
     "babel-loader": "10.1.1",
     "typescript": "5.9.3",
-    "webpack": "5.111.1",
-    "webpack-cli": "7.2.3",
-    "webpack-dev-server": "6.0.0"
+    "webpack": "5.112.2",
+    "webpack-cli": "7.3.1",
+    "webpack-dev-server": "6.1.0"
   },
   "overrides": {
     "react": "$react",
