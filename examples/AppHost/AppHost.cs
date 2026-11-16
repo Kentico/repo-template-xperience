@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 // Runs everything DancingGoat needs for local development: `aspire run` from the repository root.
 //
 // SQL Server ("Sql:UseExistingServer" in appsettings.json, AppHost user secrets, or environment):
-//   true  (default) DancingGoat uses its own connection string and salt from user secrets
+//   true  (default) DancingGoat uses its own connection string from user secrets
 //                   (scripts/Initialize-Database.ps1 or the setup-local skill)
 //   false           a persistent SQL Server container; the database is created on first run
 //
@@ -53,8 +53,8 @@ if (!builder.Configuration.GetValue("Sql:UseExistingServer", true))
     // IPv4: Docker publishes on 127.0.0.1, and "localhost" makes SqlClient wait on ::1 first
     var server = ReferenceExpression.Create($"{sql.Resource.PrimaryEndpoint.Property(EndpointProperty.IPV4Host)},{sql.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)}");
 
-    // Creates the database when it is missing (dbmanager generates the salt, kept in DancingGoat
-    // user secrets) and updates it when it is behind the application
+    // Creates the database when it is missing (restoring the committed CI repository) and updates
+    // it when it is behind the application
     var databaseInit = builder.AddExecutable("database-init", "pwsh", repositoryRoot)
         .WithArgs(context =>
         {

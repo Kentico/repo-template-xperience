@@ -45,6 +45,11 @@ param (
     # Community only, required: the author or company name for package metadata and LICENSE.md
     [string]$Author,
 
+    # The repository's DancingGoat "administrator" password: committed as a hash in the CI repository,
+    # used by every local database and the e2e tests. Local development only; no quotes, backticks, $, or spaces
+    [ValidatePattern('^[^\s''"`$]{8,}$')]
+    [string]$AdminPassword = 'Pass@12345',
+
     # Print the derived names and exit without changing files
     [switch]$Preview
 )
@@ -93,6 +98,7 @@ function Write-Names {
     Write-Host "Product name:  $productPrefix`: $DisplayName"
     Write-Host "Publishing:    $publishing"
     if ($Author) { Write-Host "Author:        $Author" }
+    Write-Host "Admin login:   administrator / $AdminPassword"
 }
 
 if ($Preview) {
@@ -125,8 +131,8 @@ $textExtensions = @(
 )
 $textNames = @('.editorconfig', '.gitignore', '.gitattributes', 'CODEOWNERS')
 
-# Template-only material that is not renamed: this skill
-$excluded = '^\.claude/skills/setup-repo/'
+# Not renamed: this skill (template-only), and the Xperience CI repository (DancingGoat object data, no tokens)
+$excluded = '^\.claude/skills/setup-repo/|/App_Data/CIRepository/'
 
 function Get-TemplateFiles {
     git ls-files --cached --others --exclude-standard |
@@ -294,7 +300,36 @@ Update-File "$dg/appsettings.Development.json" {
     $c -replace "(?s)(`"$([regex]::Escape($moduleKey))`":\s*\{[^}]*`"Port`":\s*)\d+", "`${1}$clientPort"
 }
 Update-File 'LICENSE.md' { param($c) $c -replace 'Copyright \(c\) \d{4}', "Copyright (c) $((Get-Date).Year)" }
+
+# DancingGoat administrator password: where it is written, and its hash in the CI repository
+# (ASP.NET Core Identity v3 format: PBKDF2 HMAC-SHA512, 100,000 iterations, 16-byte salt, 32-byte subkey)
+if ($AdminPassword -cne 'Pass@12345') {
+    Update-File 'scripts/Initialize-Database.ps1' { param($c) $c.Replace("[string]`$AdminPassword = 'Pass@12345'", "[string]`$AdminPassword = '$AdminPassword'") }
+    Update-File 'tests/e2e/shared/config.ts' { param($c) $c.Replace('adminPassword = "Pass@12345"', "adminPassword = `"$AdminPassword`"") }
+    foreach ($doc in 'docs/Contributing-Setup.md', '.claude/skills/setup-local/SKILL.md') {
+        Update-File $doc { param($c) [regex]::Replace($c, '(`administrator`[^`\r\n]{1,30})`Pass@12345`', { param($m) "$($m.Groups[1].Value)``$AdminPassword``" }) }
+    }
+
+    $salt = [Security.Cryptography.RandomNumberGenerator]::GetBytes(16)
+    $subkey = [Security.Cryptography.Rfc2898DeriveBytes]::Pbkdf2([Text.Encoding]::UTF8.GetBytes($AdminPassword), $salt, 100000, [Security.Cryptography.HashAlgorithmName]::SHA512, 32)
+    $header = [byte[]](1, 0, 0, 0, 2, 0, 1, 0x86, 0xA0, 0, 0, 0, 16)
+    $hash = [Convert]::ToBase64String([byte[]]($header + $salt + $subkey))
+    Update-File "$dg/App_Data/CIRepository/@global/cms.user/administrator.xml" {
+        param($c)
+        $c = [regex]::Replace($c, '(<UserPassword>\s*<!\[CDATA\[)[^\]]*(\]\]>)', { param($m) "$($m.Groups[1].Value)$hash$($m.Groups[2].Value)" })
+        $c -replace '<UserSecurityStamp>[^<]*</UserSecurityStamp>', "<UserSecurityStamp>$([guid]::NewGuid())</UserSecurityStamp>"
+    }
+}
 Update-File "$dg/Properties/launchSettings.json" { param($c) $c -replace 'http://localhost:\d+', "http://localhost:$appPort" }
+Update-File "$dg/appsettings.CI.json" { param($c) $c -replace '"ServiceDomain": "localhost:\d+"', "`"ServiceDomain`": `"localhost:$appPort`"" }
+Update-File '.github/workflows/ci.yml' { param($c) $c -replace 'http://localhost:\d+', "http://localhost:$appPort" }
+# Channel domains in the CI repository, so a restored database links emails to the local site
+Get-ChildItem "$dg/App_Data/CIRepository" -Recurse -Filter *.xml -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Directory.Parent.Name -in 'cms.websitechannel', 'emaillibrary.emailchannel' } | ForEach-Object {
+        Update-File ([IO.Path]::GetRelativePath($root, $_.FullName)) {
+            param($c) $c -replace '(<(WebsiteChannelDomain|EmailChannelServiceDomain)>)localhost:\d+', "`${1}localhost:$appPort"
+        }
+    }
 Update-File '.mcp.json' {
     param($c)
     $c = $c -replace '"MANAGEMENT_API_SECRET": "[^"]*"', "`"MANAGEMENT_API_SECRET`": `"$secret`""

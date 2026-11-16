@@ -7,9 +7,10 @@ What this repository changes in the generated `kentico-xperience-sample-mvc` pro
 | `DancingGoat.csproj` | `ProjectReference` to the core project and the `.Admin` project (unconditional, `SeparatedAdmin` ignored); repository's own `UserSecretsId` |
 | `Program.cs` | `using <core namespace>;`; `builder.Services.Add<Name>();` after `AddDancingGoatServices()`; `builder.AddDancingGoatLocalEnvironment();` before `AddDancingGoatManagementApi()` |
 | `LocalEnvironmentConfiguration.cs` | repository-only: `AddXperienceSmtp()` (fallback for system emails, notifications, and all email channels); binds `SmtpOptions`, `SystemEmailOptions`, `EmailQueueOptions`, and the `AdminIdentityOptions:ExpireTimeSpanMinutes` override from configuration |
-| `appsettings.json` | `CMSConnectionString` to `localhost,1433`, database = repository slug, `sa` / `Pass@12345`; `CMSHashStringSalt` stays empty as the template ships it (`scripts/Initialize-Database.ps1` keeps the real salt in user secrets) |
+| `appsettings.json` | `CMSConnectionString` to `localhost,1433`, database = repository slug, `sa` / `Pass@12345`; `CMSHashStringSalt` is the repository's shared salt (the CI repository's macro signatures depend on it; never change it) |
 | `appsettings.Development.json` | repository's ManagementApi port and secret; `SmtpOptions` (localhost:1025); `SystemEmailOptions`; `EmailQueueOptions`, `CMSProcessContactActionsInterval`, `AdminIdentityOptions:ExpireTimeSpanMinutes`; `CMSAdminClientModuleSettings` Proxy entry for the admin module key |
-| `appsettings.CI.json` | repository-only file for the CI e2e job (`ASPNETCORE_ENVIRONMENT=CI`): SMTP to Mailpit, no admin client Proxy entry |
+| `appsettings.CI.json` | repository-only file for the CI e2e job (`ASPNETCORE_ENVIRONMENT=CI`): SMTP to Mailpit, `ServiceDomain` on the repository's port, no admin client Proxy entry |
+| `App_Data/CIRepository` | repository-only: Xperience CI repository, committed object data; `repository.config` excludes `cms.settingskey`; `cms.user` holds the repository's `administrator` password hash; channel domains on the repository's port. Changed only by `--kxp-ci-store` (step 7), never merged by hand |
 | `Properties/launchSettings.json` | single `DancingGoat` profile, no IIS settings, `launchBrowser: false`, repository's port |
 | `AGENTS.md` | MCP servers described as configured in the repository root `.mcp.json`; `npm rebuild chromedriver` row in Useful commands |
 | `.npmrc` | repository-only: `ignore-scripts=true` (chromedriver opt-in noted inside) |

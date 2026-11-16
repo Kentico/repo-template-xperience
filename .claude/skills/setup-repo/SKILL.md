@@ -20,8 +20,9 @@ Collect from the user:
 - **Description**: one sentence on what the library does
 - **Admin UI**: does it extend the Xperience administration? (`-NoAdmin` removes the `.Admin` project)
 - Community only: GitHub owner, author name, repository slug if not `xperience-community-<name>`
+- DancingGoat `administrator` password (default `Pass@12345`): local development only, the same for everyone who clones the repository. Its hash is committed in the CI repository and the e2e tests sign in with it.
 
-Run `./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family <Family> -Name <Name> -DisplayName "<Display name>" [-Example] [-NoAdmin] [-GitHubOrg <owner>] [-Author "<author>"] [-RepoSlug <slug>] -Preview`. Show its output. Done when the user accepts every name.
+Run `./.claude/skills/setup-repo/scripts/Rename-Template.ps1 -Family <Family> -Name <Name> -DisplayName "<Display name>" [-Example] [-NoAdmin] [-GitHubOrg <owner>] [-Author "<author>"] [-AdminPassword <password>] [-RepoSlug <slug>] -Preview`. Show its output. Done when the user accepts every name.
 
 ## 3. Rename and prune
 

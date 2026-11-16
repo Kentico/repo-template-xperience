@@ -11,8 +11,14 @@
       AppSettings  (default in CI) appsettings.json keeps them; user secrets only load in Development
       None         appsettings.json is restored and nothing is saved
 
-    dbmanager owns the salt: it generates one unless -HashStringSalt is given. When saving to user
-    secrets and a salt is already stored there, that salt is reused, so a machine keeps one salt.
+    The salt is the CMSHashStringSalt committed in appsettings.json, shared by every machine so the
+    macro signatures in the Continuous Integration repository stay valid. A salt in DancingGoat user
+    secrets would override it, so it is removed. Without a committed salt, a salt already in user
+    secrets is reused, otherwise dbmanager generates one.
+
+    When examples/DancingGoat/App_Data/CIRepository exists, the new database gets the repository's
+    objects (--kxp-ci-restore) and Continuous Integration is enabled. DancingGoat must be built in
+    -Configuration first.
 
     Without a license file the database is still created; add the license on first sign-in
     to the administration (/admin, user "administrator").
@@ -34,14 +40,20 @@ param (
     [string]$Username,
     [string]$Password,
 
-    # Password for the "administrator" account
-    [string]$AdminPassword = $(if ($env:XPERIENCE_ADMIN_PASSWORD) { $env:XPERIENCE_ADMIN_PASSWORD } else { 'Pass@12345' }),
+    # The repository's "administrator" password. The CI repository restore sets the committed
+    # password hash, so this only matters for a database without a CI repository. Keep it equal
+    # to adminPassword in tests/e2e/shared/config.ts.
+    [string]$AdminPassword = 'Pass@12345',
 
     # Xperience license file; optional
     [string]$LicenseFile = $env:XPERIENCE_LICENSE_FILE,
 
-    # Salt for macro signatures; defaults to the one in DancingGoat user secrets, otherwise dbmanager generates one
+    # Salt for macro signatures; defaults to CMSHashStringSalt in appsettings.json, then DancingGoat user secrets, otherwise dbmanager generates one
     [string]$HashStringSalt,
+
+    # Build configuration DancingGoat was built in; its Xperience CLI runs without building
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Debug',
 
     # Drop and recreate the database if it exists
     [switch]$Recreate,
@@ -80,11 +92,18 @@ if (-not $PSBoundParameters.ContainsKey('Password')) {
 }
 
 $useUserSecrets = $SaveTo -in 'UserSecrets', 'Salt'
-if (-not $HashStringSalt -and $useUserSecrets) {
+$committedSalt = [string]$appsettings.CMSHashStringSalt
+if (-not $HashStringSalt) { $HashStringSalt = $committedSalt }
+if ($useUserSecrets) {
     Push-Location $project
     try {
         $stored = dotnet user-secrets list 2>$null | Where-Object { $_ -like 'CMSHashStringSalt = *' } | Select-Object -First 1
-        if ($stored) { $HashStringSalt = $stored.Substring('CMSHashStringSalt = '.Length) }
+        if ($stored -and $committedSalt) {
+            # User secrets override appsettings.json: a machine salt would invalidate the repository's macro signatures
+            dotnet user-secrets remove 'CMSHashStringSalt' | Out-Null
+            Write-Host 'Removed CMSHashStringSalt from DancingGoat user secrets: appsettings.json has the shared salt.'
+        }
+        elseif ($stored -and -not $HashStringSalt) { $HashStringSalt = $stored.Substring('CMSHashStringSalt = '.Length) }
     }
     finally {
         Pop-Location
@@ -99,11 +118,15 @@ function Invoke-DancingGoatCli([string[]]$cliArguments) {
     $authentication = if ($Username) { "User ID=$Username;Password=$Password" } else { 'Integrated Security=True' }
     $env:ConnectionStrings__CMSConnectionString = "Data Source=$ServerName;Initial Catalog=$DatabaseName;$authentication;TrustServerCertificate=True;Encrypt=False"
     if ($HashStringSalt) { $env:CMSHashStringSalt = $HashStringSalt }
+    # From the project folder: the content root, where App_Data/CIRepository resolves
+    Push-Location $project
     try {
-        dotnet run --project $project --no-build --no-launch-profile -- @cliArguments
+        dotnet run --project $project --no-build --configuration $Configuration --no-launch-profile -- @cliArguments
     }
     finally {
+        Pop-Location
         Remove-Item Env:ConnectionStrings__CMSConnectionString -ErrorAction SilentlyContinue
+        Remove-Item Env:CMSHashStringSalt -ErrorAction SilentlyContinue
     }
 }
 
@@ -159,17 +182,21 @@ try {
                 $written = [IO.File]::ReadAllText($appsettingsPath) | ConvertFrom-Json
                 dotnet user-secrets set 'ConnectionStrings:CMSConnectionString' $written.ConnectionStrings.CMSConnectionString | Out-Null
                 if ($LASTEXITCODE -ne 0) { throw 'dotnet user-secrets set failed' }
-                dotnet user-secrets set 'CMSHashStringSalt' $written.CMSHashStringSalt | Out-Null
-                if ($LASTEXITCODE -ne 0) { throw 'dotnet user-secrets set failed' }
+                if (-not $committedSalt) {
+                    dotnet user-secrets set 'CMSHashStringSalt' $written.CMSHashStringSalt | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw 'dotnet user-secrets set failed' }
+                }
                 [IO.File]::WriteAllText($appsettingsPath, $appsettingsOriginal)
-                Write-Host 'Moved the connection string and CMSHashStringSalt to DancingGoat user secrets.'
+                Write-Host "Moved the connection string$(if (-not $committedSalt) { ' and CMSHashStringSalt' }) to DancingGoat user secrets."
             }
             'Salt' {
-                $written = [IO.File]::ReadAllText($appsettingsPath) | ConvertFrom-Json
-                dotnet user-secrets set 'CMSHashStringSalt' $written.CMSHashStringSalt | Out-Null
-                if ($LASTEXITCODE -ne 0) { throw 'dotnet user-secrets set failed' }
+                if (-not $committedSalt) {
+                    $written = [IO.File]::ReadAllText($appsettingsPath) | ConvertFrom-Json
+                    dotnet user-secrets set 'CMSHashStringSalt' $written.CMSHashStringSalt | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw 'dotnet user-secrets set failed' }
+                    Write-Host 'Saved CMSHashStringSalt to DancingGoat user secrets.'
+                }
                 [IO.File]::WriteAllText($appsettingsPath, $appsettingsOriginal)
-                Write-Host 'Saved CMSHashStringSalt to DancingGoat user secrets.'
             }
             'None' {
                 [IO.File]::WriteAllText($appsettingsPath, $appsettingsOriginal)
@@ -182,6 +209,16 @@ try {
 }
 finally {
     Pop-Location
+}
+
+# Objects from the committed Continuous Integration repository, then CI on so changes are written back to it
+if (Test-Path (Join-Path $project 'App_Data/CIRepository/repository.config')) {
+    Write-Host 'Restoring the Continuous Integration repository (examples/DancingGoat/App_Data/CIRepository)'
+    Invoke-DancingGoatCli @('--kxp-ci-restore')
+    if ($LASTEXITCODE -ne 0) { throw "Continuous Integration restore failed ($LASTEXITCODE). Is DancingGoat built in $Configuration?" }
+    $enabled = Invoke-DancingGoatCli @('--kxp-ci-enable', '--format', 'json') | Select-Object -Last 1 | ConvertFrom-Json
+    if (-not $enabled.success) { throw "Enabling Continuous Integration failed: $($enabled.message)" }
+    Write-Host $enabled.message
 }
 
 Write-Host "Database ready. Sign in at /admin as 'administrator'."

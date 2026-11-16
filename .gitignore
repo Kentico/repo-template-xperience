@@ -143,3 +143,6 @@ segments_2i
 
 **/CMSModules/WebFarm/*
 
+
+# Xperience Continuous Integration lock files
+**/CIRepository/.lock/

@@ -46,10 +46,23 @@ Running the sample project requires an Xperience by Kentico database. AI agents 
 ```
 
 - Server, database (`xperience-by-kentico-repotemplate`), and SQL login come from `ConnectionStrings` in `examples/DancingGoat/appsettings.json`. The default targets a Docker SQL Server on `localhost,1433` with the `sa` login; for a locally installed SQL Server pass `-ServerName` (and `-Username ""` for Windows authentication).
-- The `administrator` account password is `Pass@12345`, or the `XPERIENCE_ADMIN_PASSWORD` environment variable.
+- The `administrator` account password is `Pass@12345`. It is the repository's password, chosen at repository setup: the CI repository commits its hash, and the e2e tests sign in with it.
 - Pass `-LicenseFile <path>` (or set `XPERIENCE_LICENSE_FILE`) to install your Xperience license. Without it, add the license when you first sign in to the administration.
 - `-Recreate` drops and recreates an existing database.
-- The script runs [`kentico-xperience-dbmanager`](https://docs.kentico.com/documentation/developers-and-admins/installation#create-the-project-database), then moves the connection string and `CMSHashStringSalt` it writes into DancingGoat user secrets and restores `examples/DancingGoat/appsettings.json`, so there is nothing to commit. A salt already in user secrets is reused, so one machine keeps one salt. `-SaveTo` changes this (`Salt`, `AppSettings`, `None`); see the script's help.
+- DancingGoat must be built first (`dotnet build`): the script runs DancingGoat's Xperience CLI.
+- The script runs [`kentico-xperience-dbmanager`](https://docs.kentico.com/documentation/developers-and-admins/installation#create-the-project-database), then moves the connection string it writes into DancingGoat user secrets and restores `examples/DancingGoat/appsettings.json`, so there is nothing to commit. `-SaveTo` changes this (`Salt`, `AppSettings`, `None`); see the script's help.
+- Macros are signed with the `CMSHashStringSalt` committed in `appsettings.json`. Every machine shares it, so the CI repository's macro signatures stay valid; do not change it.
+- The script then restores the [Continuous Integration](https://docs.kentico.com/documentation/developers-and-admins/ci-cd/continuous-integration) repository (below) and enables CI.
+
+### Continuous Integration repository
+
+`examples/DancingGoat/App_Data/CIRepository` holds DancingGoat's objects and content (content types, pages, email templates, channels, and anything the library adds) as XML files, committed with the code. With CI enabled, every change made in the administration is written there.
+
+- Commit repository changes that belong with your code change. To discard others: `git restore` (and `git clean` for new files) in the folder, then `dotnet run --project examples/DancingGoat -- --kxp-ci-restore`.
+- After pulling repository changes from others: `dotnet run --project examples/DancingGoat -- --kxp-ci-restore`.
+- Settings keys are excluded (`repository.config`). Users are included: the `administrator` password is the repository's, and changing it locally changes the repository.
+- The CI `e2e` job restores the repository into a new database and runs the tests against it.
+- Windows: some paths are long; enable `git config --global core.longpaths true`.
 
 ### Run with Aspire
 
@@ -65,7 +78,7 @@ The dashboard links the live site and the administration. By default DancingGoat
 dotnet user-secrets set "Sql:UseExistingServer" false --project examples/AppHost
 ```
 
-Set `XPERIENCE_LICENSE_FILE` before `aspire run` to install the license into a new container database. After its first run, set the channel domains as in step 7 of the `setup-local` skill (`.claude/skills/setup-local/SKILL.md`) so emails link to the local site.
+Set `XPERIENCE_LICENSE_FILE` before `aspire run` to install the license into a new container database.
 
 By default DancingGoat sends emails to the machine-wide Mailpit from [Email](#email), and the dashboard shows it as unhealthy when it isn't running. To start a Mailpit container for the run instead, set `Mail:UseExistingServer` to `false`:
 

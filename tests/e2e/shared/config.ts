@@ -20,10 +20,10 @@ export const appBaseUrl = (process.env.DANCING_GOAT_BASE_URL ?? launchProfileUrl
 
 export const adminBaseUrl = process.env.ADMIN_BASE_URL ?? `${appBaseUrl}/admin`;
 
-// scripts/Initialize-Database.ps1 creates the "administrator" account with
-// XPERIENCE_ADMIN_PASSWORD, defaulting to Pass@12345.
-export const adminUsername = process.env.XPERIENCE_ADMIN_USERNAME ?? "administrator";
-export const adminPassword = process.env.XPERIENCE_ADMIN_PASSWORD ?? "Pass@12345";
+// The repository's "administrator" account: its password hash is committed in the CI repository
+// (examples/DancingGoat/App_Data/CIRepository/@global/cms.user), which every database restores.
+export const adminUsername = "administrator";
+export const adminPassword = "Pass@12345";
 
 // Storage state written by the `admin-setup` project (admin/auth.setup.ts) and
 // reused by `admin-tests`, so admin specs start signed in.

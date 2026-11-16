@@ -132,9 +132,9 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
       DOTNET_NOLOGO: 1
       HAS_LICENSE: ${{ secrets.XPERIENCE_LICENSE_KEY != '' }}
-      DANCING_GOAT_BASE_URL: http://localhost:5080
+      DANCING_GOAT_BASE_URL: http://localhost:54851
       # Xperience's command-line parser rejects --urls, so Kestrel's address comes from ASPNETCORE_URLS
-      ASPNETCORE_URLS: http://localhost:5080
+      ASPNETCORE_URLS: http://localhost:54851
       E2E_WEB_SERVER_COMMAND: dotnet run --project ../../examples/DancingGoat --configuration Release --no-build --no-launch-profile
 
     steps:
@@ -160,16 +160,6 @@ jobs:
           cache: npm
           cache-dependency-path: "**/package-lock.json"
 
-      - name: Create database
-        if: env.HAS_LICENSE == 'true'
-        env:
-          XPERIENCE_LICENSE_KEY: ${{ secrets.XPERIENCE_LICENSE_KEY }}
-        run: |
-          $license = Join-Path $env:RUNNER_TEMP 'xperience-license.txt'
-          Set-Content $license $env:XPERIENCE_LICENSE_KEY -NoNewline
-          ./scripts/Initialize-Database.ps1 -LicenseFile $license
-          Remove-Item $license
-
       # template:admin:start
       # Release build embeds the admin client (npm ci + npm run build)
       # template:admin:end
@@ -178,6 +168,17 @@ jobs:
         run: |
           dotnet restore --locked-mode
           dotnet build --configuration Release --no-restore
+
+      # Restores examples/DancingGoat/App_Data/CIRepository with the Release build's Xperience CLI
+      - name: Create database
+        if: env.HAS_LICENSE == 'true'
+        env:
+          XPERIENCE_LICENSE_KEY: ${{ secrets.XPERIENCE_LICENSE_KEY }}
+        run: |
+          $license = Join-Path $env:RUNNER_TEMP 'xperience-license.txt'
+          Set-Content $license $env:XPERIENCE_LICENSE_KEY -NoNewline
+          ./scripts/Initialize-Database.ps1 -LicenseFile $license -Configuration Release
+          Remove-Item $license
 
       - name: Install Playwright
         if: env.HAS_LICENSE == 'true'
