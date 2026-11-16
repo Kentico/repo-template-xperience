@@ -14,7 +14,7 @@ To set up a new repository from this template:
 - [Git](https://git-scm.com/downloads)
 - [PowerShell 7+](https://learn.microsoft.com/powershell/scripting/install/installing-powershell)
 - [.NET SDK](https://dotnet.microsoft.com/download/dotnet/10.0), the exact version in `global.json`
-- [Node.js](https://nodejs.org/en/download) 24+ (the Release build of the `.Admin` project runs npm)
+- [Node.js](https://nodejs.org/en/download) 26+ (the Release build of the `.Admin` project runs npm)
 - An AI coding agent that runs skills from `.claude/skills/`, such as [Claude Code](https://claude.com/claude-code) or [GitHub Copilot](https://github.com/features/copilot)
 
 Running the sample site needs more (SQL Server, Docker, Aspire). See [Contributing Setup](./docs/Contributing-Setup.md).
