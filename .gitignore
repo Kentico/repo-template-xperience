@@ -82,7 +82,13 @@ ClientBin/
 *~
 *.dbmdl
 *.[Pp]ublish.xml
-# *.pfx
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
 *.publishsettings
 
 # SQL Server files
