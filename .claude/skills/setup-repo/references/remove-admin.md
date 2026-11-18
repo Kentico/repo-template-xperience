@@ -8,7 +8,7 @@ Only when the project has no admin UI extensions. `Rename-Template.ps1 -NoAdmin`
 - `examples/DancingGoat/DancingGoat.csproj`: the `<Admin>` `ProjectReference`
 - `examples/DancingGoat/appsettings.Development.json`: the `CMSAdminClientModuleSettings` section
 - `.vscode/tasks.json`: every `npm` task
-- `tests/e2e/admin/custom-template.spec.ts` and `tests/e2e/admin/customTemplatePage.ts` (the sample admin page they test is gone); the rest of `tests/e2e/admin` stays – admin sign-in and shell tests still apply to libraries without admin UI pages
+- `tests/e2e/admin/custom-template.spec.ts`, `tests/e2e/admin/customTemplatePage.ts`, and `tests/e2e/screenshots/admin.screenshots.ts` (the sample admin page they test and capture is gone); the rest of `tests/e2e/admin` stays – admin sign-in and shell tests still apply to libraries without admin UI pages
 - README install command: the core package instead of `.Admin`
 - every block marked `template:admin:start` / `template:admin:end`:
   - `.github/workflows/ci.yml`: the `build_and_test` `Check admin client` step and the npm build comments

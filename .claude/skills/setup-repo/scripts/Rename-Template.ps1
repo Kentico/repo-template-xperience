@@ -241,6 +241,7 @@ if ($NoAdmin) {
     # The sample admin page these test is gone; admin sign-in and shell tests stay
     Remove-Path 'tests/e2e/admin/custom-template.spec.ts'
     Remove-Path 'tests/e2e/admin/customTemplatePage.ts'
+    Remove-Path 'tests/e2e/screenshots/admin.screenshots.ts'
 
     $adminProject = [regex]::Escape("$dotNet.Admin")
     foreach ($solution in "$dotNet.slnx", "src/$dotNet.Libs.slnx") {

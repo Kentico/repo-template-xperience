@@ -31,6 +31,7 @@ While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up:
 <!-- template:admin:start -->
 - The same applies to the admin client in `src/*/Client`.
 <!-- template:admin:end -->
+- README screenshots in `images/screenshots` come from `npm run screenshots` in `tests/e2e`, never by hand. When a change alters UI they show, or adds UI worth showing, update or add a capture in `tests/e2e/screenshots`, run it, and look at the images: they double as a visual check. Local only; not run in CI.
 - `global.json` pins the exact .NET SDK (`rollForward: disable`): the lock files record SDK-implicit packages, so a different SDK fails `dotnet restore --locked-mode`. To change the SDK, edit `global.json`, run `dotnet restore --force-evaluate`, and commit both.
 - Releases: `VersionPrefix` / `VersionSuffix` in `Directory.Build.props`, then the publish pipeline; see "Releasing" in `docs/Contributing-Setup.md`.
 - `examples/` is excluded from formatting by `examples/.editorconfig` (`generated_code = true`)

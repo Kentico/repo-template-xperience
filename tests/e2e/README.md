@@ -32,6 +32,15 @@ npm run report      # open the last HTML report
 
 Before a commit: `npm run format`, `npm run lint`, `npm run typecheck`. CI runs them on every PR, license or not.
 
+## README screenshots
+
+`npm run screenshots` saves the README's screenshots to `images/screenshots/<name>.png` (`screenshots.config.ts`). Run it before a PR that changes UI, review the images, and commit them; it is not part of `npm test` or CI.
+
+- Each `screenshots/*.screenshots.ts` drives the UI (with the tests' page objects) to the state to show, waits for it with `expect`, and calls `capture(page, name, options)` from `shared/screenshot.ts`. Admin captures start signed in.
+- `capture` uses a fixed 1440×900 light view with reduced motion, so content that animates in on scroll is shown at once. In the administration it cuts off the license banner and handles its inner scroll area. Options: `fullHeight` (full page, up to a height), `cropHeight`, `element` (one element).
+- Content the captures need belongs in the CI repository, so every database has it. Captures that create data (imports, submissions) should run against a database you can throw away.
+- Link the images from `README.md` or `docs/` with relative paths: `![Imports list](./images/screenshots/imports-list.png)`.
+
 ## CI
 
 The `e2e` job in `.github/workflows/ci.yml` runs SQL Server and Mailpit service containers, builds in Release, creates the database with `scripts/Initialize-Database.ps1` (restoring the committed CI repository) (admin client embedded, no Proxy mode), and runs DancingGoat with `ASPNETCORE_ENVIRONMENT=CI` (`examples/DancingGoat/appsettings.CI.json`). It needs the license key in the `XPERIENCE_LICENSE_KEY` secret – as a repository secret, and as a Dependabot secret for Dependabot PRs. Without it the job's steps are skipped, as for PRs from forks. The HTML report is uploaded as the `playwright-report` artifact.

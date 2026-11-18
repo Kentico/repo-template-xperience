@@ -54,7 +54,7 @@ Running the sample site needs more (SQL Server, Docker, Aspire). See [Contributi
 
 ## Description
 
----A short description of the functionality – what scenarios are fulfilled by the Integration / App / Solution. Include screenshots displaying the functionality.---
+---A short description of the functionality – what scenarios are fulfilled by the Integration / App / Solution. Include screenshots displaying the functionality: generate them into `images/screenshots` with `npm run screenshots` (see `tests/e2e/README.md`).---
 
 ---Also list any limitations of the functionality that may result in unexpected behavior for the end user. These can be caused, e.g., by scope cuts or unexpected issues during implementation.---
 
