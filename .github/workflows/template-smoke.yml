@@ -65,12 +65,11 @@ jobs:
           global-json-file: global.json
 
       - name: Setup Node.js
-        if: ${{ !matrix.noAdmin }}
         uses: actions/setup-node@v7
         with:
           node-version: 26
           cache: npm
-          cache-dependency-path: src/Kentico.Xperience.RepoTemplate.Admin/Client/package-lock.json
+          cache-dependency-path: "**/package-lock.json"
 
       - name: Rename template
         run: |
@@ -93,6 +92,22 @@ jobs:
 
       - name: Check formatting
         run: dotnet format --no-restore --verify-no-changes
+
+      # Renamed TypeScript must still lint and keep its formatting.
+      # Release build already ran npm ci in each admin client.
+      - name: Check TypeScript
+        run: |
+          $dirs = @(Get-ChildItem src/*/Client -Directory) + (Get-Item tests/e2e)
+          foreach ($dir in $dirs) {
+            Push-Location $dir
+            if (-not (Test-Path node_modules)) { npm ci }
+            npm run lint
+            $lint = $LASTEXITCODE
+            npm run format:check
+            $format = $LASTEXITCODE
+            Pop-Location
+            if ($lint -ne 0 -or $format -ne 0) { throw "Lint or format check failed in $dir" }
+          }
 
       - name: Pack
         if: ${{ !matrix.example }}

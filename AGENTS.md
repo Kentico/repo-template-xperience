@@ -27,6 +27,10 @@ While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up:
 ## Development
 
 - Before a commit, format with: `dotnet format --no-restore`
+- TypeScript in `tests/e2e`: before a commit that touches it, run there `npm run format`, `npm run lint` (`npm run lint:fix` fixes what it can), and `npm run typecheck`; CI fails on any of them. ESLint rules: the folder's `eslint.config.mjs`; Prettier: root `.prettierrc.json`, Markdown excluded. Fix findings; disable a rule inline only with a comment saying why.
+<!-- template:admin:start -->
+- The same applies to the admin client in `src/*/Client`.
+<!-- template:admin:end -->
 - `global.json` pins the exact .NET SDK (`rollForward: disable`): the lock files record SDK-implicit packages, so a different SDK fails `dotnet restore --locked-mode`. To change the SDK, edit `global.json`, run `dotnet restore --force-evaluate`, and commit both.
 - Releases: `VersionPrefix` / `VersionSuffix` in `Directory.Build.props`, then the publish pipeline; see "Releasing" in `docs/Contributing-Setup.md`.
 - `examples/` is excluded from formatting by `examples/.editorconfig` (`generated_code = true`)

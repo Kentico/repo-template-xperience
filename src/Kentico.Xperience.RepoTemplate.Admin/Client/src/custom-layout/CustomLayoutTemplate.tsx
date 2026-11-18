@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button, ButtonSize } from "@kentico/xperience-admin-components";
 import { usePageCommand } from "@kentico/xperience-admin-base";
 
@@ -29,11 +29,11 @@ export const CustomLayoutTemplate = ({ label }: CustomLayoutProps) => {
     Commands.SetLabel,
     {
       after: (response) => {
-         if (response) {
+        if (response) {
           setLabelValue(response.label);
         }
       },
-    }
+    },
   );
 
   return (
@@ -42,7 +42,7 @@ export const CustomLayoutTemplate = ({ label }: CustomLayoutProps) => {
       <Button
         label="Get server time"
         size={ButtonSize.S}
-        onClick={() => submit()}
+        onClick={() => void submit()}
       />
     </div>
   );

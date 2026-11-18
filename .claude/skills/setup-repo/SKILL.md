@@ -75,9 +75,10 @@ Run, in order, each passing before the next:
 2. `dotnet format --no-restore` (fixes formatting your own edits changed), then `dotnet format --no-restore --verify-no-changes`
 3. `dotnet build --configuration Release --no-restore`
 4. `dotnet test --configuration Release --no-build`
-5. `git grep --untracked -n -i -E "repo[- ]?template|template:[a-z]+:(start|end)" -- ":!.claude/skills/setup-repo"` finds nothing
+5. In `tests/e2e` (`npm ci` first) and each `src/*/Client`: `npm run format` (fixes formatting the rename changed), then `npm run lint` and `npm run format:check`
+6. `git grep --untracked -n -i -E "repo[- ]?template|template:[a-z]+:(start|end)" -- ":!.claude/skills/setup-repo"` finds nothing
 
-Done when all five pass. On failure fix the cause and restart from 1.
+Done when all six pass. On failure fix the cause and restart from 1.
 
 ## 10. Remove this skill
 

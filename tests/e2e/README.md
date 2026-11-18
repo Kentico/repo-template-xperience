@@ -30,6 +30,8 @@ npm run test:admin  # admin-tests only
 npm run report      # open the last HTML report
 ```
 
+Before a commit: `npm run format`, `npm run lint`, `npm run typecheck`. CI runs them on every PR, license or not.
+
 ## CI
 
 The `e2e` job in `.github/workflows/ci.yml` runs SQL Server and Mailpit service containers, builds in Release, creates the database with `scripts/Initialize-Database.ps1` (restoring the committed CI repository) (admin client embedded, no Proxy mode), and runs DancingGoat with `ASPNETCORE_ENVIRONMENT=CI` (`examples/DancingGoat/appsettings.CI.json`). It needs the license key in the `XPERIENCE_LICENSE_KEY` secret – as a repository secret, and as a Dependabot secret for Dependabot PRs. Without it the job's steps are skipped, as for PRs from forks. The HTML report is uploaded as the `playwright-report` artifact.
@@ -40,7 +42,5 @@ The `e2e` job in `.github/workflows/ci.yml` runs SQL Server and Mailpit service 
 | --- | --- |
 | `DANCING_GOAT_BASE_URL` | `applicationUrl` of the `DancingGoat` profile in `examples/DancingGoat/Properties/launchSettings.json` |
 | `ADMIN_BASE_URL` | `<base URL>/admin` |
-
-
 | `E2E_WEB_SERVER_COMMAND` | `dotnet run --project examples/DancingGoat` |
 | `E2E_WEB_SERVER_TIMEOUT_MS` | `180000` |

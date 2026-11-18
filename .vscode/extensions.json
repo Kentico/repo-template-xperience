@@ -6,6 +6,7 @@
     // template:azure:start
     "ms-azure-devops.azure-pipelines",
     // template:azure:end
+    "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode"
   ]
 }

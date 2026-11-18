@@ -103,6 +103,12 @@ Playwright tests for the live site and the administration live in `tests/e2e`; t
 
    > use `dotnet: format` VS Code task.
 
+1. If you changed TypeScript, run `npm run format`, `npm run lint`, and `npm run typecheck` in its folder (`npm run lint:fix` fixes what it can). CI fails on unformatted or failing code.
+   - `tests/e2e`
+<!-- template:admin:start -->
+   - `src/Kentico.Xperience.RepoTemplate.Admin/Client` – or use the `npm: format - admin client` and `npm: lint - admin client` VS Code tasks
+<!-- template:admin:end -->
+
 1. Commit changes, with a commit message preferably following the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/#summary) convention.
 
 1. Once ready, create a PR on GitHub. The PR will need to have all comments resolved and all tests passing before it will be merged.

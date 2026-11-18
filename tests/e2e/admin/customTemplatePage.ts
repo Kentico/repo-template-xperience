@@ -40,7 +40,9 @@ export class CustomTemplatePage {
       .first()
       .click();
 
-    await expect(this.page).toHaveURL(new RegExp(`/admin/${applicationSlug}$`, "i"));
+    await expect(this.page).toHaveURL(
+      new RegExp(`/admin/${applicationSlug}$`, "i"),
+    );
     await expect(this.heading).toBeVisible({ timeout: 30_000 });
   }
 

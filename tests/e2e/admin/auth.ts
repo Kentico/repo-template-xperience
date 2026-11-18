@@ -38,8 +38,16 @@ export async function signInToAdmin(page: Page): Promise<void> {
     return;
   }
 
-  const usernameInput = await waitForAnyVisible(page, usernameSelectors, 30_000);
-  const passwordInput = await waitForAnyVisible(page, passwordSelectors, 30_000);
+  const usernameInput = await waitForAnyVisible(
+    page,
+    usernameSelectors,
+    30_000,
+  );
+  const passwordInput = await waitForAnyVisible(
+    page,
+    passwordSelectors,
+    30_000,
+  );
 
   await usernameInput.fill(adminUsername);
   await passwordInput.fill(adminPassword);
@@ -51,14 +59,20 @@ export async function signInToAdmin(page: Page): Promise<void> {
         if (await isVisibleWithin(page, adminShellSelectors, 1_000)) {
           return "ready";
         }
-        return new URL(page.url()).pathname.toLowerCase().includes("sign") ? "sign-in" : "loading";
+        return new URL(page.url()).pathname.toLowerCase().includes("sign")
+          ? "sign-in"
+          : "loading";
       },
       { timeout: 60_000, message: "Admin shell did not render after sign-in." },
     )
     .toBe("ready");
 }
 
-async function isVisibleWithin(page: Page, selectors: string[], timeoutMs: number): Promise<boolean> {
+async function isVisibleWithin(
+  page: Page,
+  selectors: string[],
+  timeoutMs: number,
+): Promise<boolean> {
   try {
     await waitForAnyVisible(page, selectors, timeoutMs);
     return true;
@@ -67,18 +81,17 @@ async function isVisibleWithin(page: Page, selectors: string[], timeoutMs: numbe
   }
 }
 
-async function waitForAnyVisible(page: Page, selectors: string[], timeoutMs: number): Promise<Locator> {
-  const startedAt = Date.now();
+async function waitForAnyVisible(
+  page: Page,
+  selectors: string[],
+  timeoutMs: number,
+): Promise<Locator> {
+  const locator = selectors
+    .map((selector) => page.locator(selector))
+    .reduce((any, next) => any.or(next))
+    .filter({ visible: true })
+    .first();
 
-  while (Date.now() - startedAt < timeoutMs) {
-    for (const selector of selectors) {
-      const locator = page.locator(selector).first();
-      if ((await locator.count()) > 0 && (await locator.isVisible())) {
-        return locator;
-      }
-    }
-    await page.waitForTimeout(150);
-  }
-
-  throw new Error(`No visible element for [${selectors.join(", ")}].`);
+  await locator.waitFor({ state: "visible", timeout: timeoutMs });
+  return locator;
 }

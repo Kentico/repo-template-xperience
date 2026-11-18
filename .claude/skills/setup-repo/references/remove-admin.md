@@ -11,13 +11,14 @@ Only when the project has no admin UI extensions. `Rename-Template.ps1 -NoAdmin`
 - `tests/e2e/admin/custom-template.spec.ts` and `tests/e2e/admin/customTemplatePage.ts` (the sample admin page they test is gone); the rest of `tests/e2e/admin` stays – admin sign-in and shell tests still apply to libraries without admin UI pages
 - README install command: the core package instead of `.Admin`
 - every block marked `template:admin:start` / `template:admin:end`:
-  - `.github/workflows/ci.yml`: the `build_and_test` `Setup Node.js` and `Type-check admin client` steps and the npm build comments
+  - `.github/workflows/ci.yml`: the `build_and_test` `Check admin client` step and the npm build comments
   - `.github/workflows/publish.yml` and `.azuredevops/pipelines/build-and-release.yml` (when present): the Node.js steps and the `Admin` artifact
   - `.github/dependabot.yml`: the admin client `npm` entry
   - `examples/AppHost/AppHost.cs`: the `admin-client` resource
   - `.gitignore`: the `**/Client/dist/*` line
   - `.github/PULL_REQUEST_TEMPLATE.md`: the `### Admin UI / Client` section
-  - `docs/Contributing-Setup.md`: the admin `Client/package.json` reference (Node.js itself stays: `tests/e2e` needs it)
+  - `AGENTS.md`: the admin client lint and format line
+  - `docs/Contributing-Setup.md`: the admin `Client/package.json` reference and the admin client lint item (Node.js itself stays: `tests/e2e` needs it)
   - `tests/e2e/README.md`: the Proxy-mode `npm start` requirement
 
 `Kentico.Xperience.Admin` stays in the root `Directory.Packages.props`: DancingGoat still references it, and `examples/Directory.Packages.props` only overrides its version.
