@@ -16,7 +16,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var repositoryRoot = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", ".."));
 
-var dancingGoat = builder.AddProject<Projects.DancingGoat>("dancinggoat")
+var dancingGoat = builder.AddDotnetProject("dancinggoat", Path.Combine(repositoryRoot, "examples", "DancingGoat", "DancingGoat.csproj"))
     .WithUrls(context =>
     {
         if (context.Urls.FirstOrDefault(url => url.Endpoint?.EndpointName == "http") is { } site)
