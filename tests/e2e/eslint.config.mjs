@@ -39,6 +39,11 @@ export default defineConfig(
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-import-type-side-effects": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+      // Numbers stringify predictably (counts, ids, URLs); strictTypeChecked forbids them, recommendedTypeChecked allows them
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
       // Page objects assert through expect* methods
       "playwright/expect-expect": [
         "error",
