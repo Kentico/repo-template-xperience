@@ -89,9 +89,23 @@ if (!builder.Configuration.GetValue("Sql:UseExistingServer", true))
 }
 
 // template:admin:start
-// Admin client webpack dev server (DancingGoat's Development settings use Proxy mode)
-builder.AddJavaScriptApp("admin-client", Path.Combine(repositoryRoot, "src", "Kentico.Xperience.RepoTemplate.Admin", "Client"), "start")
-    .WithNpm(install: true);
+// Admin client webpack dev server (DancingGoat's Development settings use Proxy mode). Its port is
+// the Proxy entry's in DancingGoat's appsettings.Development.json (webpack.config.js devServer.port matches).
+var adminClientPort = new ConfigurationBuilder()
+    .AddJsonFile(Path.Combine(repositoryRoot, "examples", "DancingGoat", "appsettings.Development.json"))
+    .Build()
+    .GetSection("CMSAdminClientModuleSettings").GetChildren().Single()
+    .GetValue<int>("Port");
+
+var adminClient = builder.AddJavaScriptApp("admin-client", Path.Combine(repositoryRoot, "src", "Kentico.Xperience.RepoTemplate.Admin", "Client"), "start")
+    .WithNpm(install: true)
+    // webpack-dev-server owns the port, so no Aspire proxy
+    .WithHttpEndpoint(port: adminClientPort, isProxied: false)
+    // The dev server serves /entry.js once the bundle is built
+    .WithHttpHealthCheck("/entry.js");
+
+// Admin pages that load the client bundle fail until the dev server serves it
+dancingGoat.WaitFor(adminClient);
 
 // template:admin:end
 builder.Build().Run();
