@@ -74,6 +74,7 @@ $names = switch ($setup.family) {
     'Community' { @{ DotNet = "XperienceCommunity.$name"; AdminOrg = 'xperience'; AdminProject = "community-$kebab-admin"; Prefix = 'Xperience Community' } }
     default { throw "Unknown family '$($setup.family)' in .config/template.json." }
 }
+$appName = if ($setup.family -eq 'Labs') { "$($setup.displayName) (Labs)" } else { $setup.displayName }
 $dotNet = $names.DotNet
 $slug = $setup.repoSlug
 $org = $setup.gitHubOrg
@@ -93,6 +94,8 @@ $tokens = @(
     , @('Kentico.Xperience.RepoTemplate', $dotNet)
     , @('kentico.xperience.repotemplate', $dotNet.ToLowerInvariant())
     , @('Xperience by Kentico: Repo Template', "$($names.Prefix): $($setup.displayName)")
+    , @('name: "Repo Template"', "name: `"$appName`"")
+    , @('const applicationName = "Repo Template";', "const applicationName = `"$appName`";")
     , @('Repo Template', $setup.displayName)
     , @('RepoTemplate', $name)
     , @('repotemplate', $kebab)

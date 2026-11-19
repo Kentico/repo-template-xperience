@@ -14,6 +14,8 @@ The family sets the support policy. **Example** is a separate choice (`-Example`
 
 `<Display Name>` is the human-readable name with spaces (`Cool Thing`). The product name is the README `#` heading and the `<Product>` of each packable project (`.Admin` appends ` administration`). `Rename-Template.ps1 -DisplayName` writes both.
 
+Admin application names (`UIApplication` `name`): Kentico and Community use `<Display Name>`; Labs appends ` (Labs)` (`Cool Thing (Labs)`). Every Labs admin application follows this, including ones added after setup. `Rename-Template.ps1` sets it on the sample application.
+
 ## Projects
 
 | Project | Name | Purpose |
@@ -48,6 +50,7 @@ The full key appears in `Client/package.json` `name` and in `CMSAdminClientModul
 | `kentico` + `xperience-repotemplate-admin` | admin `<org>` + `<project>` |
 | `Kentico.Xperience.RepoTemplate` | .NET name (`Kentico-Xperience-RepoTemplate` dashed form in Azure DevOps artifacts; lowercase in lock files) |
 | `Xperience by Kentico: Repo Template` | product name |
+| `name: "Repo Template"`, `const applicationName = "Repo Template";` | admin application name (Labs: `<Display Name> (Labs)`) |
 | `Repo Template` | `<Display Name>` |
 | `RepoTemplate` | `<Name>` |
 | `repotemplate` | `<name>` |
