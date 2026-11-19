@@ -43,7 +43,7 @@ The baseline is the template commit this repository matches:
 1. `commit` from the manifest, if set.
 2. Otherwise the template commit whose tree equals this repository's first commit's tree. GitHub creates a repository from a template as one commit with the template's files:
    `git rev-parse "$(git rev-list --max-parents=0 HEAD)^{tree}"`, then find that tree in `git -C $tmpl log --format="%H %T" main`.
-3. Otherwise the last template `main` commit before this repository's first commit date. Tell the user the baseline is approximate.
+3. Otherwise (squashed history, or a repository created from an earlier copy of the template, whose commits are not in this template's history): run `./.claude/skills/update-template/scripts/Find-TemplateBaseline.ps1 -Template $tmpl`. It ranks template commits by how many files this repository has unchanged. When several score alike, read what each later one changed (`git -C $tmpl show --stat <commit>`) and check whether this repository has it; the baseline is the last one it has. Prefer commits from before this repository's first commit (`AfterRepo` false). Tell the user the baseline is inferred and why.
 
 Done when the baseline commit is known.
 
@@ -68,11 +68,14 @@ Done when this skill matches the latest tag.
 
 ## 7. Review each release
 
-For each release, oldest first:
+For each release, oldest first (`<from>` is the previous release, or the baseline for the first):
 
-1. List the pull requests in its notes. For each, read `gh pr view <number> --repo Kentico/repo-template-xperience --json title,body,files`. Its **Downstream** section says who should adopt it, why, and the follow-up steps.
-2. Read the change: `git -C $tmpl diff <previous tag or baseline> <tag> -- <files>`.
-3. Decide per change, and note the reason:
+1. List its changes: `git -C $tmpl log --first-parent --format="%h %s" <from>..<tag>`. Release notes list only pull requests; commits pushed straight to `main` (before v1.0.0) appear only here.
+2. For each pull request, read `gh pr view <number> --repo Kentico/repo-template-xperience --json title,body,files`. Its **Downstream** section says who should adopt it, why, and the follow-up steps. Find a commit's pull request with `gh api repos/Kentico/repo-template-xperience/commits/<sha>/pulls --jq ".[].number"`.
+3. See what each changed file means here. The script renders the template's files with this repository's names, in a folder outside the repository, and merges each change into this repository's copy without changing it:
+   `./.claude/skills/update-template/scripts/Compare-TemplateFiles.ps1 -Template $tmpl -Base <from> -Target <tag>`
+   It lists a status per file (the script's header explains each) and writes `<path>.base`, `.target`, and `.merged` to its output folder. Read the rendered change with `git diff --no-index <out>/<path>.base <out>/<path>.target`.
+4. Decide per change, and note the reason:
    - **adopt**: it fits as is
    - **adapt**: it fits, but this repository's names or local changes need a different form
    - **skip**: not relevant, or already done here
@@ -92,13 +95,14 @@ Done when every change in every newer release has a decision and a reason.
 
 ## 8. Apply
 
-Apply the adopt and adapt decisions:
+Apply the adopt and adapt decisions, release by release:
 
-- Template names map to this repository's names. The ordered token list is in `.claude/skills/setup-repo/scripts/Rename-Template.ps1` at the tag (`git -C $tmpl show <tag>:<path>`); the values come from `setup`. For example, `Kentico.Xperience.RepoTemplate` becomes the repository's .NET name, and `Kentico/xperience-by-kentico-repotemplate` becomes `<gitHubOrg>/<repoSlug>`.
-- Template-marked blocks (`template:<tag>:start` / `end`) are kept or dropped by the same choices as in `setup-repo`; their marker lines never land here.
-- Small diffs: edit the files by hand. Larger ones: replace the tokens in the diff, then `git apply --3way`.
-- Keep this repository's own content (project-specific docs text, `references/dancinggoat-overlay.md`, customized skills) and bring in only the template's change around it.
-- New files (a new skill, a new script) are copied with tokens replaced.
+- Files adopted whole with status `new` or `merged`: rerun the compare script with `-Apply -Paths <those files>`. It writes only those files, with this repository's names and its local changes (ports, secrets) kept.
+- Status `conflict`, or a file adopted only in part: edit the repository's file by hand, using `<out>/<path>.merged` (conflict markers show local and template text) or the rendered diff. Keep this repository's own content (project-specific docs text, `references/dancinggoat-overlay.md`, customized skills) and bring in only the template's change around it.
+- Status `missing` (this repository removed the file) or `deleted` (the template removed it): decide by hand.
+- Write files with LF line endings and no added byte order mark. PowerShell's `Set-Content` writes CRLF on Windows; `-Apply` and the Edit tool do not.
+
+If the compare script fails or its naming is wrong for this repository, the ordered token list is in `.claude/skills/setup-repo/scripts/Rename-Template.ps1` at the tag (`git -C $tmpl show <tag>:<path>`), with values from `setup`; template-marked blocks (`template:<tag>:start` / `end`) are kept or dropped by the same choices as in `setup-repo`.
 
 Then do each adopted change's follow-up steps, and the checks in `AGENTS.md` ("Development") for what changed: `dotnet restore --force-evaluate` after `global.json` or project changes, `dotnet format`, npm format, lint, and typecheck, build and test, screenshots when screenshot tooling or captured UI changed.
 
