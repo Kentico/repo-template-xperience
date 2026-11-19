@@ -1,11 +1,18 @@
 # Kentico.Xperience.* and @kentico/* are updated with the update-xperience agent skill,
 # which also regenerates examples/DancingGoat for the new version.
+#
+# cooldown (supply-chain hardening): a version is proposed only once it is this many days old, so a
+# compromised or broken release is usually caught and pulled first. Security updates ignore it. The npm
+# folders' .npmrc files set min-release-age to the same 3 days for local installs.
 version: 2
 updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     ignore:
       - dependency-name: "Kentico.Xperience.*"
     groups:
@@ -25,6 +32,9 @@ updates:
       - /tests/e2e
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
     ignore:
       # template:admin:start
       - dependency-name: "@kentico/*"
@@ -51,11 +61,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    # semver-major-days is not supported for GitHub Actions
+    cooldown:
+      default-days: 3
     groups:
       github-actions:
         patterns: ["*"]
