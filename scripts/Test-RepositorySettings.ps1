@@ -119,7 +119,7 @@ $manifests = gh api graphql -H 'Accept: application/vnd.github.hawkgirl-preview+
 if ($sbom) {
     Add-Result 'Dependency graph' 'Pass' "$manifests manifests, $(@($sbom.sbom.packages).Count) packages"
 } else {
-    Add-Result 'Dependency graph' 'Fail' "No SBOM, $(if ($manifests) { $manifests } else { 0 }) manifests: off, or no manifests detected"
+    Add-Result 'Dependency graph' 'Fail' "No SBOM, $(if ($manifests) { $manifests } else { 0 }) manifests: turn on Dependency graph (Settings > Advanced Security)"
 }
 
 $null = gh api "$api/vulnerability-alerts" 2>$null
@@ -131,7 +131,7 @@ Add-Result 'Dependabot security updates' $(if ($fixesOn) { 'Pass' } else { 'Fail
 
 $ui = "Settings > Advanced Security > Dependabot"
 Add-Result 'Grouped security updates' 'Check in UI' "$ui (needs security updates on)"
-Add-Result 'Auto-dismiss low-impact alerts for dev dependencies' 'Check in UI' "$ui > Dependabot rules"
+Add-Result 'Auto-dismiss low-impact alerts for dev dependencies' 'Check in UI' "$ui > Dependabot auto-triage rules"
 
 Write-Host "Repository settings: $Repository"
 $results | Format-Table -AutoSize -Wrap | Out-String -Width 200 | Write-Host

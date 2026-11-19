@@ -138,7 +138,7 @@ Set once by a repository admin. Required for repositories in the Kentico organiz
   - `merge-queue.json`: requires **Build and Test** and **E2E Tests** (branches need not be up to date) and the merge queue. Repository admins can bypass it.
 - **Settings** → **Advanced Security**:
   - **Dependency graph**: on, with manifests found (**Insights** → **Dependency graph**)
-  - **Dependabot alerts**: on, with the rule that dismisses low-impact alerts for development dependencies (**Dependabot rules**)
+  - **Dependabot alerts**: on, with the rule that dismisses low-impact alerts for development dependencies (**Dependabot auto-triage rules**)
   - **Dependabot security updates** and **Grouped security updates**: on
 
 ## Releasing
