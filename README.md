@@ -43,8 +43,23 @@ Running the sample site needs more (SQL Server, Docker, Aspire). See [Contributi
 | `setup-repo`           | Once, right after creating the repository               |
 | `setup-local`          | Local environment: SQL Server, database, secrets, npm   |
 | `update-xperience`     | Update Xperience packages and regenerate DancingGoat    |
+| `update-template`      | Adopt changes from newer template releases              |
 | `create-pull-request`  | Create or update the pull request for a branch          |
 | `design-conventions`   | DancingGoat UI and copy                                 |
+
+### Template updates
+
+Repositories created from the template keep up with it through the `update-template` skill. `setup-repo` records the setup choices in `.config/template.json`; `update-template` compares the repository with newer template releases, adopts the changes that fit, and records the release and any changes skipped on purpose. Run it every month or two.
+
+### Releasing the template
+
+A template release is a `v<major>.<minor>.<patch>` tag on `main` with a GitHub release. `update-template` reads the release notes and each pull request's **Downstream** section to decide what to adopt.
+
+1. Check that each merged pull request since the last release has its **Downstream** section filled.
+1. Create the release: `gh release create v<version> --target main --generate-notes`. The notes list the pull requests, with Dependabot updates grouped apart (`.github/release.yml`).
+1. Above the generated notes, add a short **Upgrade notes** list for changes every repository should adopt, and any steps they need (repository settings, secrets).
+
+Raise the minor version for new features (a new skill, workflow, or tool), the patch version for fixes and small changes, and the major version when adopting a change needs more than the `update-template` skill does.
 
 # Xperience by Kentico: Repo Template
 

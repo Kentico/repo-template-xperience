@@ -2,7 +2,7 @@
 
 ## Repository
 
-This repository was created from the Kentico repository template, the starting point for Xperience by Kentico integrations, Kentico Labs projects, example projects, and community libraries. The template supplied the first commit: build and CI setup, agent skills, the DancingGoat sample, and the Aspire host. GitHub does not sync template changes afterwards; this content is now the repository's own.
+This repository was created from the Kentico repository template, the starting point for Xperience by Kentico integrations, Kentico Labs projects, example projects, and community libraries. The template supplied the first commit: build and CI setup, agent skills, the DancingGoat sample, and the Aspire host. GitHub does not sync template changes afterwards; this content is now the repository's own. The `update-template` skill brings in newer template releases where they fit; `.config/template.json` records the last one adopted, the setup choices, and changes skipped on purpose. Run it every month or two, or when the user asks.
 
 - `src/` – libraries, published as NuGet packages (none for an example repository); a `.Admin` project extends the Xperience administration with a React client in `Client/`
 - `tests/` – NUnit unit tests; Playwright e2e tests in `tests/e2e`
@@ -15,6 +15,7 @@ Skills in `.claude/skills/`:
 - `setup-repo` – once, right after the repository is created from the template
 - `setup-local` – local environment (SQL Server, database, secrets, npm, Playwright)
 - `update-xperience` – Xperience version updates
+- `update-template` – adopt changes from newer releases of the template
 - `create-pull-request` – create or update the pull request for the current branch
 - `design-conventions` – DancingGoat UI and copy
 
@@ -22,7 +23,7 @@ Skills in `.claude/skills/`:
 
 Delete this subsection when running `setup-repo`.
 
-While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up: project names, `README.md`, and `docs/` are placeholders. Comment lines `template:<tag>:start` / `template:<tag>:end` (`admin`, `azure`, `package`) mark blocks that `setup-repo` removes for some choices; keep each pair around what it marks. If `git remote get-url origin` is not the template's own repository (the `github.repository` in `.github/workflows/template-smoke.yml`), run `setup-repo` before other work. In the template's own repository, keep the placeholders: changes there improve the template.
+While `Kentico.Xperience.RepoTemplate.slnx` exists the repository is not set up: project names, `README.md`, and `docs/` are placeholders. Comment lines `template:<tag>:start` / `template:<tag>:end` (`admin`, `azure`, `package`) mark blocks that `setup-repo` removes for some choices, and `upstream` blocks that it always removes; keep each pair around what it marks. If `git remote get-url origin` is not the template's own repository (the `github.repository` in `.github/workflows/template-smoke.yml`), run `setup-repo` before other work. In the template's own repository, keep the placeholders: changes there improve the template. Repositories created from it adopt changes with `update-template`, so fill the pull request's **Downstream** section, and keep `.config/template.json` values `null` (`setup-repo` and `update-template` fill them). Template releases: "Releasing the template" in `README.md`.
 
 ## Development
 

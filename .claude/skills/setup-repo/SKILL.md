@@ -32,7 +32,8 @@ Run the same command without `-Preview`. Done when it exits 0. It:
 - replaces tokens (including product names) and renames files and folders
 - removes what the family and example choice do not use, and sets Community ownership ([references/family-edits.md](references/family-edits.md))
 - with `-NoAdmin`, removes the `.Admin` project and everything that serves it ([references/remove-admin.md](references/remove-admin.md))
-- strips the `template:<tag>:start` / `template:<tag>:end` marker lines
+- strips the `template:<tag>:start` / `template:<tag>:end` marker lines, and removes `template:upstream` blocks (template repository only)
+- records the setup choices under `setup` in `.config/template.json`, which the `update-template` skill reads
 - regenerates DancingGoat secrets and ports, sets the `LICENSE.md` year, and formats the renamed C#
 
 It exits 1 listing any leftover token, marker, or admin reference. On failure, fix the listed lines by hand; do not rerun on a renamed repository (restore it with `git checkout . && git clean -fd` first).
@@ -76,7 +77,7 @@ Run, in order, each passing before the next:
 3. `dotnet build --configuration Release --no-restore`
 4. `dotnet test --configuration Release --no-build`
 5. In `tests/e2e` (`npm ci` first) and each `src/*/Client`: `npm run format` (fixes formatting the rename changed), then `npm run lint` and `npm run format:check`
-6. `git grep --untracked -n -i -E "repo[- ]?template|template:[a-z]+:(start|end)" -- ":!.claude/skills/setup-repo"` finds nothing
+6. `git grep --untracked -n -i -P "repo[- ]?template(?!-xperience)|template:[a-z]+:(start|end)" -- ":!.claude/skills/setup-repo" ":!.claude/skills/update-template"` finds nothing (the template's own repository name, `repo-template-xperience`, stays; `update-template` names template tokens on purpose)
 
 Done when all six pass. On failure fix the cause and restart from 1.
 
@@ -89,6 +90,7 @@ Delete `.claude/skills/setup-repo/` only after step 9 passes. Done when the fold
 List: family, library or example, every resulting name, admin project kept or removed, files deleted in steps 3 and 7, validation results, remaining placeholders, and the maintainer's next steps:
 
 - create the local environment with the `setup-local` skill
+- every month or two, run the `update-template` skill to bring in newer template releases
 - add the Xperience license key as the `XPERIENCE_LICENSE_KEY` repository secret and Dependabot secret, so the `e2e` CI job runs (it is skipped without it)
 - Community: Trusted Publishing policy on nuget.org for the repository and `publish.yml`, and the `NUGET_USER` repository variable; package icon; releases follow "Releasing" in `docs/Contributing-Setup.md`
 - review `.github/CODEOWNERS`

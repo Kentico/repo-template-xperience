@@ -73,6 +73,7 @@ Body: the template with each section filled per the rules below, the leading `<!
 - `Linked Work`: only verified issue references, else `None`.
 - `Review Map`: 3 ordered review entry points by area.
 - `Changes by Area`: only template-defined headings for changed areas; remove empty ones.
+- `Downstream` (template repository only): who should adopt the change and what they must do after; `Not needed (template-only)` for changes to template-only files such as the `setup-repo` skill.
 - `Validation/Automated`: default to "See PR checks"; name checks only when non-obvious or already failing.
 - `Validation/Manual`: include only when manual testing is required.
 - `Risk and Rollback`: one concise line each.

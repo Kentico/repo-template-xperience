@@ -74,6 +74,17 @@ One short paragraph: what changed and why it matters.
 - <Single-line change>
 - <Single-line change>
 
+<!-- template:upstream:start -->
+## Downstream
+
+Repositories created from this template read this section to decide whether to adopt the change (`update-template` skill).
+
+- Adoption: Recommended | Optional | Not needed (template-only)
+- Applies to: All | Admin UI | Library | Example | <family: Kentico, Labs, Community>
+- Why adopt: <one line, e.g. security fix, fixes a common setup failure>
+- Follow-up after adopting: <e.g. `dotnet restore --force-evaluate`, import rulesets, `npm run screenshots`> or None
+
+<!-- template:upstream:end -->
 ## Validation
 
 ### Automated

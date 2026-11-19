@@ -131,8 +131,9 @@ $textExtensions = @(
 )
 $textNames = @('.editorconfig', '.gitignore', '.gitattributes', 'CODEOWNERS')
 
-# Not renamed: this skill (template-only), and the Xperience CI repository (DancingGoat object data, no tokens)
-$excluded = '^\.claude/skills/setup-repo/|/App_Data/CIRepository/'
+# Not renamed: this skill (template-only), the update-template skill (names template tokens on purpose),
+# and the Xperience CI repository (DancingGoat object data, no tokens)
+$excluded = '^\.claude/skills/(setup-repo|update-template)/|/App_Data/CIRepository/'
 
 function Get-TemplateFiles {
     git ls-files --cached --others --exclude-standard |
@@ -255,9 +256,29 @@ if ($NoAdmin) {
     Update-File 'README.md' { param($c) $c.Replace("dotnet add package $dotNet.Admin", "dotnet add package $dotNet") }
 }
 
+# Template update manifest: the setup choices, so the update-template skill can map template changes to this repository
+Update-File '.config/template.json' {
+    param($c)
+    $manifest = $c | ConvertFrom-Json -AsHashtable
+    $manifest.setup = [ordered]@{
+        family      = $Family
+        name        = $Name
+        displayName = $DisplayName
+        example     = [bool]$Example
+        noAdmin     = [bool]$NoAdmin
+        gitHubOrg   = $GitHubOrg
+        repoSlug    = $names.Slug
+        author      = if ($Author) { $Author } else { $null }
+    }
+    $ordered = [ordered]@{}
+    foreach ($key in 'template', 'version', 'commit', 'setup', 'skipped') { $ordered[$key] = $manifest[$key] }
+    ($ordered | ConvertTo-Json -Depth 5) + "`n"
+}
+
 # Marked blocks: the lines from "template:<tag>:start" through "template:<tag>:end".
 # A removed tag loses its blocks; a kept tag loses only the marker lines.
-$removedTags = @()
+# "upstream" blocks serve only the template's own repository.
+$removedTags = @('upstream')
 if ($NoAdmin) { $removedTags += 'admin' }
 if (-not $usesAzure) { $removedTags += 'azure' }
 if ($Example) { $removedTags += 'package' }
@@ -348,11 +369,12 @@ foreach ($folder in 'src', 'tests') {
 }
 
 # 7. Verify no template tokens, markers, or removed admin references remain
-$patterns = @('(?i)repo[- ]?template', 'template:\w+:(start|end)')
+# The template's own repository name (repo-template-xperience) stays: update-template reads it
+$patterns = @('(?i)repo[- ]?template(?!-xperience)', 'template:\w+:(start|end)')
 if ($NoAdmin) { $patterns += [regex]::Escape("$dotNet.Admin"), [regex]::Escape($moduleKey) }
 
 $leftovers = Get-TemplateFiles | ForEach-Object {
-    if ((Split-Path $_ -Leaf) -match '(?i)repo[- ]?template') { "$_ (path)" }
+    if ((Split-Path $_ -Leaf) -match '(?i)repo[- ]?template(?!-xperience)') { "$_ (path)" }
     # Case-sensitive: lock files keep the lowercase admin project name until the next restore
     Select-String -LiteralPath $_ -Pattern $patterns -CaseSensitive | ForEach-Object { "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
 }

@@ -1,0 +1,9 @@
+# Groups the release notes GitHub generates. Dependabot labels its pull requests "dependencies".
+changelog:
+  categories:
+    - title: Changes
+      labels: ["*"]
+      exclude:
+        labels: ["dependencies"]
+    - title: Dependencies
+      labels: ["dependencies"]
