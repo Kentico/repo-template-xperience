@@ -21,6 +21,12 @@ The exact .NET SDK version in `global.json`
 - See `engines` in `src/Kentico.Xperience.RepoTemplate.Admin/Client/package.json` for specific version requirements
 <!-- template:admin:end -->
 
+#### Minimum package age
+
+Each npm folder's `.npmrc` sets `min-release-age=3`: npm resolves only versions published at least 3 days ago, so a compromised or broken release is usually caught and pulled first. Dependabot version updates wait the same 3 days (`cooldown` in `.github/dependabot.yml`).
+
+Dependabot security updates skip both, so a merged security fix can lock a version newer than 3 days. `npm ci` and `npm install` still work. `npm update`, or an install that re-resolves that package, fails with `notarget`. Wait until the version is 3 days old, or add the package to `min-release-age-exclude` in that `.npmrc` and remove it again once it is.
+
 ### Database
 
 SQL Server 2019 or newer compatible database
