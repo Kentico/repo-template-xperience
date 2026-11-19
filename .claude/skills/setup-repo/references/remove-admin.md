@@ -13,7 +13,7 @@ Only when the project has no admin UI extensions. `Rename-Template.ps1 -NoAdmin`
 - every block marked `template:admin:start` / `template:admin:end`:
   - `.github/workflows/ci.yml`: the `build_and_test` `Check admin client` step and the npm build comments
   - `.github/workflows/publish.yml` and `.azuredevops/pipelines/build-and-release.yml` (when present): the Node.js steps and the `Admin` artifact
-  - `.github/dependabot.yml`: the admin client `npm` entry
+  - `.github/dependabot.yml`: the admin client folder and its ignore rules in the `npm` entry
   - `examples/AppHost/AppHost.cs`: the `admin-client` resource
   - `.gitignore`: the `**/Client/dist/*` line
   - `.github/PULL_REQUEST_TEMPLATE.md`: the `### Admin UI / Client` section
