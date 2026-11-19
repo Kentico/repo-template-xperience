@@ -123,12 +123,23 @@ Playwright tests for the live site and the administration live in `tests/e2e`; t
 
 ## Merging pull requests
 
-Set up once by a repository admin, in a branch ruleset for `main` (**Settings** → **Rules**):
+Merge with **Merge when ready**, which adds the pull request to the merge queue. The CI workflow runs for `merge_group` events: each queued pull request is tested on top of `main` and the pull requests ahead of it, so open pull requests (for example several Dependabot updates) don't need updating and a new CI run after every merge.
 
-- Require status checks to pass: **Build and Test** and **E2E Tests**. Leave **Require branches to be up to date before merging** off.
-- Require merge queue. The CI workflow runs for `merge_group` events: each queued pull request is tested on top of `main` and the pull requests ahead of it, so open pull requests (for example several Dependabot updates) don't need updating and a new CI run after every merge.
+## Repository settings
 
-Merge with **Merge when ready**, which adds the pull request to the queue.
+Set once by a repository admin. Required for repositories in the Kentico organization; recommended for others. Check them with `./scripts/Test-RepositorySettings.ps1` (GitHub CLI signed in as an admin); it exits 1 while one fails.
+
+- `.github/CODEOWNERS` has a `* @<owner>` line, and GitHub resolves the owner (no errors under the file on GitHub)
+- the owner team has the **Admin** role (**Settings** → **Collaborators and teams**)
+- no outside collaborators added directly; access goes through teams
+- **Settings** → **General** → **Automatically delete head branches**: on
+- rulesets for `main`, imported from `.github/rulesets` (**Settings** → **Rules** → **Rulesets** → **New ruleset** → **Import a ruleset**):
+  - `protect-main.json`: blocks deleting `main` and force pushes
+  - `merge-queue.json`: requires **Build and Test** and **E2E Tests** (branches need not be up to date) and the merge queue. Repository admins can bypass it.
+- **Settings** → **Advanced Security**:
+  - **Dependency graph**: on, with manifests found (**Insights** → **Dependency graph**)
+  - **Dependabot alerts**: on, with the rule that dismisses low-impact alerts for development dependencies (**Dependabot rules**)
+  - **Dependabot security updates** and **Grouped security updates**: on
 
 ## Releasing
 

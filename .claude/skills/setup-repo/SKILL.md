@@ -92,3 +92,4 @@ List: family, library or example, every resulting name, admin project kept or re
 - add the Xperience license key as the `XPERIENCE_LICENSE_KEY` repository secret and Dependabot secret, so the `e2e` CI job runs (it is skipped without it)
 - Community: Trusted Publishing policy on nuget.org for the repository and `publish.yml`, and the `NUGET_USER` repository variable; package icon; releases follow "Releasing" in `docs/Contributing-Setup.md`
 - review `.github/CODEOWNERS`
+- apply "Repository settings" in `docs/Contributing-Setup.md` (owner team as Admin, rulesets from `.github/rulesets`, auto-deleted branches, Dependabot), then check them with `./scripts/Test-RepositorySettings.ps1`. Run it before reporting and list the rows that are not `Pass`; it is read-only, so it changes nothing.
