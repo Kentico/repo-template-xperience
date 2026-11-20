@@ -86,6 +86,9 @@ $productPrefix = switch ($Family) {
     'Community' { 'Xperience Community' }
 }
 
+# Labs admin applications end with "(Labs)"
+$appName = if ($Family -eq 'Labs') { "$DisplayName (Labs)" } else { $DisplayName }
+
 $dotNet = $names.DotNet
 $moduleKey = "$($names.AdminOrg)-$($names.AdminProject)"
 $publishing = if ($Example) { 'none (example)' } elseif ($Family -eq 'Community') { 'GitHub Actions (publish.yml)' } else { 'Azure DevOps (.azuredevops)' }
@@ -96,6 +99,7 @@ function Write-Names {
     Write-Host "Repository:    $GitHubOrg/$($names.Slug)"
     Write-Host "Admin module:  $(if ($NoAdmin) { 'none (.Admin project removed)' } else { $moduleKey })"
     Write-Host "Product name:  $productPrefix`: $DisplayName"
+    if (-not $NoAdmin) { Write-Host "Admin app:     $appName" }
     Write-Host "Publishing:    $publishing"
     if ($Author) { Write-Host "Author:        $Author" }
     Write-Host "Admin login:   administrator / $AdminPassword"
@@ -120,6 +124,8 @@ $tokens = @(
     , @('Kentico.Xperience.RepoTemplate', $dotNet)
     , @('kentico.xperience.repotemplate', $dotNet.ToLowerInvariant())
     , @('Xperience by Kentico: Repo Template', "$productPrefix`: $DisplayName")
+    , @('name: "Repo Template"', "name: `"$appName`"")
+    , @('const applicationName = "Repo Template";', "const applicationName = `"$appName`";")
     , @('Repo Template', $DisplayName)
     , @('RepoTemplate', $Name)
     , @('repotemplate', $kebab)
