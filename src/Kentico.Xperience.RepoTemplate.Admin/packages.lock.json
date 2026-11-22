@@ -803,8 +803,8 @@
       "System.Security.Cryptography.Pkcs": {
         "type": "CentralTransitive",
         "requested": "[10.0.15, )",
-        "resolved": "10.0.15",
-        "contentHash": "4jEv/lXDuQkh60lPU3hlwASErXdv1ZMKmsxVuBfZWiVKT5Q2QGo58kTa6rN519+PU+m4Hsj1m3yT8fN+Xw0XZw=="
+        "resolved": "10.0.0",
+        "contentHash": "UPWqLSygJlFerRi9XNIuM0a1VC8gHUIufyP24xQ0sc+XimqUAEcjpOz9DhKpyDjH+5B/wO3RpC0KpkEeDj/ddg=="
       }
     }
   }

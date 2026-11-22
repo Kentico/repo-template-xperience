@@ -243,6 +243,63 @@ if ($Family -eq 'Community') {
     Update-File 'LICENSE.md' { param($c) $c -replace '(Copyright \(c\) \d{4}) [^\r\n]+', "`$1 $Author" }
     Update-File '.github/CODEOWNERS' { param($c) $c -replace '(?m)^\* @\S+', "* @$GitHubOrg" }
 }
+
+# Rulesets are shared by all project types; setup narrows each one to the selected policy.
+$bypassMode = if ($Family -eq 'Kentico') { 'pull_request' } else { 'always' }
+$reviewRequired = $Family -eq 'Kentico'
+$mergeMethods = if ($Family -eq 'Community') { @('merge', 'squash', 'rebase') } else { @('squash') }
+$repositoryRoleBypass = [ordered]@{
+    actor_id    = 5
+    actor_type  = 'RepositoryRole'
+    bypass_mode = $bypassMode
+}
+$pullRequestRule = [ordered]@{
+    type       = 'pull_request'
+    parameters = [ordered]@{
+        allowed_merge_methods            = $mergeMethods
+        dismiss_stale_reviews_on_push     = $false
+        require_code_owner_review         = $reviewRequired
+        require_last_push_approval        = $reviewRequired
+        required_approving_review_count   = if ($reviewRequired) { 1 } else { 0 }
+        required_review_thread_resolution = $reviewRequired
+    }
+}
+
+Update-File '.github/rulesets/protect-main.json' {
+    param($c)
+    $ruleset = $c | ConvertFrom-Json -AsHashtable
+    $ruleset.rules = @($ruleset.rules | Where-Object type -notin 'pull_request', 'copilot_code_review', 'required_status_checks')
+    $ruleset.rules += $pullRequestRule
+    if ($reviewRequired) {
+        $ruleset.rules += [ordered]@{
+            type       = 'copilot_code_review'
+            parameters = [ordered]@{
+                review_draft_pull_requests = $false
+                review_on_push             = $true
+            }
+        }
+    }
+    if ($Family -eq 'Community') {
+        $queueRuleset = Get-Content '.github/rulesets/merge-queue.json' -Raw | ConvertFrom-Json -AsHashtable
+        $statusCheckRules = @($queueRuleset.rules | Where-Object type -eq 'required_status_checks')
+        $ruleset.rules += $statusCheckRules
+    }
+    $ruleset.bypass_actors = @($repositoryRoleBypass)
+    ($ruleset | ConvertTo-Json -Depth 10) + "`n"
+}
+
+if ($Family -eq 'Community') {
+    Remove-Path '.github/rulesets/merge-queue.json'
+}
+else {
+    Update-File '.github/rulesets/merge-queue.json' {
+        param($c)
+        $ruleset = $c | ConvertFrom-Json -AsHashtable
+        $ruleset.bypass_actors = @($repositoryRoleBypass)
+        ($ruleset | ConvertTo-Json -Depth 10) + "`n"
+    }
+}
+
 if ($NoAdmin) {
     Remove-Path "src/$dotNet.Admin"
     # The sample admin page these test is gone; admin sign-in and shell tests stay
