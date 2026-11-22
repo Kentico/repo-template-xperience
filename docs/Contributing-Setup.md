@@ -22,6 +22,10 @@ The exact .NET SDK version in `global.json`
 - See `engines` in `src/Kentico.Xperience.RepoTemplate.Admin/Client/package.json` for specific version requirements
 <!-- template:admin:end -->
 
+### GitHub CLI
+
+- [GitHub CLI](https://cli.github.com/), authenticated with access to the repository; used by repository checks and the `create-pull-request` and `update-template` skills
+
 #### Minimum package age
 
 Each npm folder's `.npmrc` sets `min-release-age=3`: npm resolves only versions published at least 3 days ago, so a compromised or broken release is usually caught and pulled first. Dependabot version updates wait the same 3 days (`cooldown` in `.github/dependabot.yml`).
@@ -134,7 +138,7 @@ For Kentico and Labs projects, use **Merge when ready** to add pull requests to 
 
 ## Repository settings
 
-Set once by a repository admin. Required for repositories in the Kentico organization; recommended for others. Check them with `./scripts/Test-RepositorySettings.ps1` (GitHub CLI signed in as an admin); it exits 1 while one fails.
+Set once by a repository admin. Required for repositories in the Kentico organization; recommended for others. Check them with `./scripts/Test-RepositorySettings.ps1` (GitHub CLI authenticated as an admin; see Required Software); it exits 1 while one fails.
 
 - `.github/CODEOWNERS` has a `* @<owner>` line, and GitHub resolves the owner (no errors under the file on GitHub)
 - the owner team has the **Admin** role (**Settings** → **Collaborators and teams**)
