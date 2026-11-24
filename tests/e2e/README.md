@@ -12,6 +12,8 @@ Playwright (TypeScript) tests against a running DancingGoat site: the live site 
 
 Page objects (`admin/*Page.ts`) hold selectors for UI this repository does not own, so an Xperience update that changes markup is fixed in one place.
 
+Tests have a three-minute timeout so administration readiness and sign-in waits can finish before the remaining steps. Screenshot tests have a separate ten-minute timeout.
+
 ## Requirements
 
 - A DancingGoat database with an Xperience **license**: `./scripts/Initialize-Database.ps1 -LicenseFile <path>` (see `docs/Contributing-Setup.md`). Without a license the live site returns 500 and the administration hides custom applications.

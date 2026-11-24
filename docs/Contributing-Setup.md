@@ -12,6 +12,7 @@ The exact .NET SDK version in `global.json`
 
 - <https://dotnet.microsoft.com/en-us/download/dotnet/10.0>
 - The version is pinned (`rollForward: disable`) because the committed NuGet lock files depend on it. To move to a newer SDK, change `global.json` and run `dotnet restore --force-evaluate`, then commit both.
+- Central package transitive pinning is enabled only for `examples/` and `tests/`, so security pins apply to projects run here without adding transitive dependencies to published libraries in `src/`. Their lock files still record the resolved dependencies.
 
 ### Node.js Runtime
 
@@ -20,6 +21,10 @@ The exact .NET SDK version in `global.json`
 <!-- template:admin:start -->
 - See `engines` in `src/Kentico.Xperience.RepoTemplate.Admin/Client/package.json` for specific version requirements
 <!-- template:admin:end -->
+
+### GitHub CLI
+
+- [GitHub CLI](https://cli.github.com/), authenticated with access to the repository; used by repository checks and the `create-pull-request` and `update-template` skills
 
 #### Minimum package age
 
@@ -129,19 +134,21 @@ Playwright tests for the live site and the administration live in `tests/e2e`; t
 
 ## Merging pull requests
 
-Merge with **Merge when ready**, which adds the pull request to the merge queue. The CI workflow runs for `merge_group` events: each queued pull request is tested on top of `main` and the pull requests ahead of it, so open pull requests (for example several Dependabot updates) don't need updating and a new CI run after every merge.
+For Kentico and Labs projects, use **Merge when ready** to add pull requests to the merge queue. The CI workflow runs for `merge_group` events, testing each queued pull request on top of `main` and the pull requests ahead of it. Community projects do not use the merge queue; the ruleset requires the CI checks before a pull request can be merged.
 
 ## Repository settings
 
-Set once by a repository admin. Required for repositories in the Kentico organization; recommended for others. Check them with `./scripts/Test-RepositorySettings.ps1` (GitHub CLI signed in as an admin); it exits 1 while one fails.
+Set once by a repository admin. Required for repositories in the Kentico organization; recommended for others. Check them with `./scripts/Test-RepositorySettings.ps1` (GitHub CLI authenticated as an admin; see Required Software); it exits 1 while one fails.
 
 - `.github/CODEOWNERS` has a `* @<owner>` line, and GitHub resolves the owner (no errors under the file on GitHub)
 - the owner team has the **Admin** role (**Settings** → **Collaborators and teams**)
 - no outside collaborators added directly; access goes through teams
 - **Settings** → **General** → **Automatically delete head branches**: on
 - rulesets for `main`, imported from `.github/rulesets` (**Settings** → **Rules** → **Rulesets** → **New ruleset** → **Import a ruleset**):
-  - `protect-main.json`: blocks deleting `main` and force pushes
-  - `merge-queue.json`: requires **Build and Test** and **E2E Tests** (branches need not be up to date) and the merge queue. Repository admins can bypass it.
+  - All project types: `protect-main.json` blocks deleting `main` and force pushes, and sets pull-request requirements and allowed merge methods. Repository admins can bypass according to the policy below.
+  - Kentico integrations: `protect-main.json` requires Code Owner approval, approval of the latest push, resolved review threads, and Copilot code review. `merge-queue.json` requires **Build and Test** and **E2E Tests** (branches need not be up to date) and the squash-only merge queue. Admin bypass is pull-request-only.
+  - Labs: `protect-main.json` has no review or Copilot requirements and permits squash only. `merge-queue.json` requires the same CI checks and squash-only queue. Admins can bypass all rules.
+  - Community: `protect-main.json` has no review or Copilot requirements, permits merge, squash, or rebase, and requires the same CI checks without a merge queue. Admins can bypass all rules.
 - **Settings** → **Advanced Security**:
   - **Dependency graph**: on, with manifests found (**Insights** → **Dependency graph**)
   - **Dependabot alerts**: on, with the rule that dismisses low-impact alerts for development dependencies (**Dependabot auto-triage rules**)

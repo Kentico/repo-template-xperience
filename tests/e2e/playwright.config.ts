@@ -11,6 +11,8 @@ const isCi = !!process.env.CI;
 export default defineConfig({
   testDir: ".",
   testIgnore: ["node_modules/**"],
+  // Sign-in can spend 60 seconds waiting for the admin shell, plus form and test steps.
+  timeout: 3 * 60_000,
   fullyParallel: true,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,

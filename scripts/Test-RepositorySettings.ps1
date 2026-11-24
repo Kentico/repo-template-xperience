@@ -28,17 +28,22 @@ function Add-Result([string]$Setting, [string]$Status, [string]$Evidence) {
 }
 
 # Returns the parsed JSON, or $null when the endpoint answers with an error (404: off or no access)
-function Invoke-GitHubApi([string]$Path) {
-    $output = gh api $Path 2>$null
+function Invoke-GitHubApi([string]$Path, [switch]$Paginate) {
+    $pagination = if ($Paginate) { @('--paginate', '--slurp') } else { @() }
+    $output = gh api $Path @pagination 2>$null
     if ($LASTEXITCODE -ne 0) { return $null }
     if (-not $output) { return @{} }
     # -NoEnumerate (twice): an empty list stays a list instead of $null
-    Write-Output -NoEnumerate ($output | ConvertFrom-Json -NoEnumerate)
+    $parsed = $output | ConvertFrom-Json -NoEnumerate
+    if ($Paginate) {
+        $parsed = @(foreach ($page in $parsed) { foreach ($item in $page) { $item } })
+    }
+    Write-Output -NoEnumerate $parsed
 }
 
 $repo = Invoke-GitHubApi $api
 if (-not $repo) { throw "Repository $Repository not found, or gh is not signed in with access to it." }
-$teams = Invoke-GitHubApi "$api/teams"
+$teams = Invoke-GitHubApi "$api/teams" -Paginate
 $owner = $repo.owner.login
 
 # CODEOWNERS: GitHub validates the file; an owner it cannot resolve is an error
@@ -92,23 +97,47 @@ Add-Result 'Automatically delete head branches' $(if ($repo.delete_branch_on_mer
 # Rulesets (.github/rulesets): the rules in effect on the default branch
 $branch = $repo.default_branch
 $rules = Invoke-GitHubApi "$api/rules/branches/$branch"
+$manifest = Get-Content '.config/template.json' -Raw | ConvertFrom-Json
+$family = if ($manifest.setup.family) { $manifest.setup.family } else { 'Kentico' }
 $types = @($rules | ForEach-Object type)
 $checks = @($rules | Where-Object type -eq 'required_status_checks' |
     ForEach-Object { $_.parameters.required_status_checks.context })
 $expected = @{
     'deletion'               = 'deletion blocked'
     'non_fast_forward'       = 'force pushes blocked'
+    'pull_request'           = 'pull request requirements'
     'required_status_checks' = 'required checks'
-    'merge_queue'            = 'merge queue'
 }
+$mustUseMergeQueue = $family -ne 'Community'
+if ($mustUseMergeQueue) { $expected['merge_queue'] = 'merge queue' }
 $missingRules = @($expected.Keys | Where-Object { $_ -notin $types } | ForEach-Object { $expected[$_] })
 $missingChecks = @('Build and Test', 'E2E Tests' | Where-Object { $_ -notin $checks })
 if ($missingRules.Count -gt 0 -or $missingChecks.Count -gt 0) {
     $missingText = @($missingRules) + @($missingChecks | ForEach-Object { "check '$_'" })
     Add-Result "Rulesets imported ($branch)" 'Fail' "Missing: $($missingText -join ', ')"
 } else {
-    $method = ($rules | Where-Object type -eq 'merge_queue').parameters.merge_method
-    Add-Result "Rulesets imported ($branch)" 'Pass' "checks: $($checks -join ', '); merge queue: $method"
+    $mergeMethods = @($rules | Where-Object type -eq 'pull_request' |
+        ForEach-Object { $_.parameters.allowed_merge_methods } | Select-Object -First 1)
+    $expectedMergeMethods = if ($family -eq 'Community') { @('merge', 'squash', 'rebase') } else { @('squash') }
+    $actualMethods = (@($mergeMethods | Sort-Object) -join ',')
+    $requiredMethods = (@($expectedMergeMethods | Sort-Object) -join ',')
+    $methodsMatch = $actualMethods -eq $requiredMethods
+    $reviewRule = $rules | Where-Object type -eq 'pull_request' | Select-Object -First 1
+    $reviewExpected = $family -eq 'Kentico'
+    $reviewMatches = $reviewRule.parameters.require_code_owner_review -eq $reviewExpected -and
+        $reviewRule.parameters.require_last_push_approval -eq $reviewExpected -and
+        $reviewRule.parameters.required_review_thread_resolution -eq $reviewExpected -and
+        $reviewRule.parameters.required_approving_review_count -eq $(if ($reviewExpected) { 1 } else { 0 })
+    $copilotRequired = 'copilot_code_review' -in $types
+    $queue = $rules | Where-Object type -eq 'merge_queue' | Select-Object -First 1
+    $queueExpected = $mustUseMergeQueue -and $queue.parameters.merge_method -eq 'SQUASH'
+    if ($methodsMatch -and $reviewMatches -and $copilotRequired -eq $reviewExpected -and $queueExpected -eq $mustUseMergeQueue) {
+        $details = "checks: $($checks -join ', '); merge methods: $($mergeMethods -join ', ')"
+        if ($mustUseMergeQueue) { $details += '; merge queue: SQUASH' }
+        Add-Result "Rulesets imported ($branch)" 'Pass' $details
+    } else {
+        Add-Result "Rulesets imported ($branch)" 'Fail' 'Review, Copilot, merge method, or merge queue policy does not match the project family'
+    }
 }
 
 # The SBOM endpoint answers only while the dependency graph is on and has found manifests
