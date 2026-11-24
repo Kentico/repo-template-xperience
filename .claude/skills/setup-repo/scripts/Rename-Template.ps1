@@ -247,7 +247,7 @@ if ($Family -eq 'Community') {
 # Rulesets are shared by all project types; setup narrows each one to the selected policy.
 $bypassMode = if ($Family -eq 'Kentico') { 'pull_request' } else { 'always' }
 $reviewRequired = $Family -eq 'Kentico'
-$mergeMethods = if ($Family -eq 'Community') { @('merge', 'squash', 'rebase') } else { @('squash') }
+$mergeMethods = @(if ($Family -eq 'Community') { 'merge', 'squash', 'rebase' } else { 'squash' })
 $repositoryRoleBypass = [ordered]@{
     actor_id    = 5
     actor_type  = 'RepositoryRole'
