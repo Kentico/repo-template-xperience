@@ -43,6 +43,8 @@ If you change the site's content model (add or remove fields, define new content
 
 `dotnet run -- --kxp-codegen` (see [docs](https://docs.kentico.com/documentation/developers-and-admins/api/generate-code-files-for-system-objects))
 
+Generate DancingGoat's own classes without `CMSDevelopmentMode`, into this project. The library's object types (module code name starting with `CMS.`) are generated into `src/` instead: see "Custom object types" in the repository's `docs/Contributing-Setup.md`.
+
 ## Coding conventions
 
 - Never hand-edit `Models/**/*.generated.cs` — change the content type using Management MCP and regenerate.

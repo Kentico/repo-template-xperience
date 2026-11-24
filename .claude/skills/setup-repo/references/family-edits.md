@@ -49,3 +49,7 @@ Keep the CI badge for every family.
 `docs/Contributing-Setup.md` "Releasing": keep the publish pipeline list for the family (Azure DevOps for Kentico and Labs, GitHub Actions for Community) and delete the other. Example: delete the whole section.
 
 Community: tell the maintainer to create a nuget.org Trusted Publishing policy for the repository and `publish.yml`, and set the `NUGET_USER` repository variable.
+
+### Object type names
+
+`docs/Contributing-Setup.md` "Custom object types" → "Names": keep the family's table row, delete the other rows and the `Setup:` comment above the table. The text below the table and the generator command use the Kentico class namespace (`Kentico<Name>` after the rename); for Labs replace it with `KenticoLabs<Name>`, for Community with `XperienceCommunity<Name>`.
