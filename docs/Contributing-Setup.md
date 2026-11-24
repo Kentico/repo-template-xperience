@@ -103,6 +103,48 @@ The root `.mcp.json` registers the Aspire MCP server (`aspire agent mcp`), so AI
 
 Playwright tests for the live site and the administration live in `tests/e2e`; they need a licensed database. See [`tests/e2e/README.md`](../tests/e2e/README.md).
 
+## Custom object types
+
+A library that stores data in custom [object types](https://docs.kentico.com/documentation/developers-and-admins/customization/object-types) ships their generated `*Info` classes. Sites that install it must not generate the same classes again: the copies would register the same object types a second time.
+
+The code generator (`--kxp-codegen --type Classes`) skips every class whose **module** code name starts with `CMS` (any case, no dot needed), unless `CMSDevelopmentMode` is `true`. So:
+
+- Put the library's classes in a module whose code name starts with `CMS.`. The library creates the module and classes in code (an installer that runs at startup).
+- Class code names do not affect this filter. Never start them with `CMS`.
+- A `CMS` module is a system module: read-only in the administration, and its classes are hidden outside development mode. Manage the data through the library's own UI or API.
+- Keep the module code name once released: the installer finds the existing module by it.
+
+### Names
+
+<!-- Setup: keep only the row for this repository's family. -->
+
+| Family | Module code name | Module display name | Class code names |
+| --- | --- | --- | --- |
+| Kentico | `CMS.Integration.RepoTemplate` | `Kentico Integration - Repo Template` | `KenticoRepoTemplate.<Entity>` |
+| Labs | `CMS.Labs.RepoTemplate` | `Kentico Labs - Repo Template` | `KenticoLabsRepoTemplate.<Entity>` |
+| Community | `CMS.XperienceCommunity.RepoTemplate` | `Xperience Community - Repo Template` | `XperienceCommunityRepoTemplate.<Entity>` |
+
+The class code name sets the object type (the code name in lowercase) and the table (`KenticoRepoTemplate_<Entity>`). One class namespace per library keeps `--include` exact.
+
+### Generate the library's classes
+
+Run DancingGoat's code generator in development mode, from `examples/DancingGoat`. Stop DancingGoat first: `dotnet run` builds it.
+
+```powershell
+$env:CMSDevelopmentMode = 'true'
+dotnet run -- --kxp-codegen --type Classes --include "KenticoRepoTemplate.*" --namespace "Kentico.Xperience.RepoTemplate" --location "../../src/Kentico.Xperience.RepoTemplate/Classes/{name}" --skip-confirmation
+Remove-Item Env:CMSDevelopmentMode
+```
+
+- `--include`: required. Development mode turns off the filter for every system module, so without it the generator writes all Xperience system classes (about 150) to the library.
+- `--namespace`: required. The default C# namespace is the module code name (`CMS.Integration.RepoTemplate`).
+- Set `CMSDevelopmentMode` only for this command (environment variable). Do not add it to `appsettings*.json`: DancingGoat should run like a site that installed the library.
+- Regenerating overwrites `*.generated.cs`. Put `TYPEINFO` changes in a partial class ([object type configuration](https://docs.kentico.com/documentation/developers-and-admins/customization/object-types/object-type-configuration#configure-object-types-in-a-partial-class)).
+
+### DancingGoat's own classes
+
+DancingGoat's content types, forms, and any object types it adds for itself are generated without development mode, into DancingGoat (see `examples/DancingGoat/AGENTS.md`), never into `src/`. Development mode does not change which content types or forms are generated. Object types for DancingGoat alone go in a module whose code name does not start with `CMS` (for example `DancingGoat.<Feature>`).
+
 ## Development Workflow
 
 1. Create a new branch with one of the following prefixes

@@ -16,6 +16,10 @@ The family sets the support policy. **Example** is a separate choice (`-Example`
 
 Admin application names (`UIApplication` `name`): Kentico and Community use `<Display Name>`; Labs appends ` (Labs)` (`Cool Thing (Labs)`). Every Labs admin application follows this, including ones added after setup. `Rename-Template.ps1` sets it on the sample application.
 
+## Object type modules
+
+Libraries with custom object types put them in a module whose code name starts with `CMS.`, so the code generator skips them in sites that install the library. Per family: module `CMS.Integration.<Name>` (Kentico), `CMS.Labs.<Name>` (Labs), `CMS.XperienceCommunity.<Name>` (Community); class code names `Kentico<Name>.<Entity>`, `KenticoLabs<Name>.<Entity>`, `XperienceCommunity<Name>.<Entity>`. Full rules and the generator command: "Custom object types" in `docs/Contributing-Setup.md`.
+
 ## Projects
 
 | Project | Name | Purpose |
