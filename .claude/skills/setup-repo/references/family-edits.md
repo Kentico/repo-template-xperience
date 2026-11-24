@@ -52,4 +52,4 @@ Community: tell the maintainer to create a nuget.org Trusted Publishing policy f
 
 ### Object type names
 
-`docs/Contributing-Setup.md` "Custom object types" → "Names": keep the family's table row, delete the other rows and the `Setup:` comment above the table. The text below the table and the generator command use the Kentico class namespace (`Kentico<Name>` after the rename); for Labs replace it with `KenticoLabs<Name>`, for Community with `XperienceCommunity<Name>`.
+`docs/Contributing-Setup.md` "Custom object types" → "Names": keep the family's table row, delete the other rows and the `Setup:` comment above the table. The text below the table, the generator command, and the `-Include` default in `scripts/Update-ObjectTypeClasses.ps1` use the Kentico class namespace (`Kentico<Name>` after the rename); for Labs replace it with `KenticoLabs<Name>`, for Community with `XperienceCommunity<Name>`.
