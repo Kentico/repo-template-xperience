@@ -128,17 +128,23 @@ The class code name sets the object type (the code name in lowercase) and the ta
 
 ### Generate the library's classes
 
-Run DancingGoat's code generator in development mode, from `examples/DancingGoat`. Stop DancingGoat first: `dotnet run` builds it.
+Stop DancingGoat first (`dotnet run` builds it), then from the repository root:
 
 ```powershell
-$env:CMSDevelopmentMode = 'true'
-dotnet run -- --kxp-codegen --type Classes --include "KenticoRepoTemplate.*" --namespace "Kentico.Xperience.RepoTemplate" --location "../../src/Kentico.Xperience.RepoTemplate/Classes/{name}" --skip-confirmation
-Remove-Item Env:CMSDevelopmentMode
+./scripts/Update-ObjectTypeClasses.ps1
+```
+
+The script runs DancingGoat's code generator in development mode:
+
+```powershell
+dotnet run -- --kxp-codegen --type Classes --include "KenticoRepoTemplate.*" --namespace "Kentico.Xperience.RepoTemplate" --location "../../src/Kentico.Xperience.RepoTemplate/Classes/{name}" --with-provider-class False --skip-confirmation
 ```
 
 - `--include`: required. Development mode turns off the filter for every system module, so without it the generator writes all Xperience system classes (about 150) to the library.
 - `--namespace`: required. The default C# namespace is the module code name (`CMS.Integration.RepoTemplate`).
-- Set `CMSDevelopmentMode` only for this command (environment variable). Do not add it to `appsettings*.json`: DancingGoat should run like a site that installed the library.
+- `CMSDevelopmentMode` is set for the generator process only (environment variable). Do not add it to `appsettings*.json`: DancingGoat should run like a site that installed the library.
+- `--with-provider-class False` (the default, stated explicitly): no dedicated `*InfoProvider` classes. Use the generic `IInfoProvider<TInfo>` ([database table API](https://docs.kentico.com/documentation/developers-and-admins/api/database-table-api#generic-provider-class-iinfoprovidertinfo)); customize it with `InfoProviderDecorator<TInfo>`, not a provider subclass.
+- In development mode the generator writes classes and interfaces without `partial`; the script adds it back. Running the command by hand needs the same fix.
 - Regenerating overwrites `*.generated.cs`. Put `TYPEINFO` changes in a partial class ([object type configuration](https://docs.kentico.com/documentation/developers-and-admins/customization/object-types/object-type-configuration#configure-object-types-in-a-partial-class)).
 
 ### DancingGoat's own classes
