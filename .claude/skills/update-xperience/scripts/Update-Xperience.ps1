@@ -123,7 +123,7 @@ function New-Pristine($templateVersion, $name) {
     # 104: the skipped "dotnet tool restore" post action; the project is still created
     Invoke-Native { dotnet new kentico-xperience-sample-mvc -n DancingGoat -o $dg --no-restore --allow-scripts No --no-update-check --debug:custom-hive $hive } -AllowedExitCodes 0, 104
     $admin = Join-Path $work "$name-admin"
-    Invoke-Native { dotnet new kentico-xperience-admin-sample -n Admin -o $admin --no-restore --no-update-check --debug:custom-hive $hive }
+    Invoke-Native { dotnet new kentico-xperience-admin-sample -n Admin -o $admin --no-restore --allow-scripts No --no-update-check --debug:custom-hive $hive }
     return @{ DancingGoat = $dg; Admin = $admin }
 }
 
