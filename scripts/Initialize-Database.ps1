@@ -17,8 +17,8 @@
     secrets is reused, otherwise dbmanager generates one.
 
     When examples/DancingGoat/App_Data/CIRepository exists, the new database gets the repository's
-    objects (--kxp-ci-restore) and Continuous Integration is enabled. DancingGoat must be built in
-    -Configuration first.
+    objects (--kxp-ci-restore) and Continuous Integration is enabled (disabled with
+    -NoContinuousIntegration). DancingGoat must be built in -Configuration first.
 
     Without a license file the database is still created; add the license on first sign-in
     to the administration (/admin, user "administrator").
@@ -27,6 +27,7 @@
     ./scripts/Initialize-Database.ps1
     ./scripts/Initialize-Database.ps1 -LicenseFile ~/xperience/license.txt -Recreate
     ./scripts/Initialize-Database.ps1 -ServerName "localhost\SQLEXPRESS" -Username "" # Windows authentication
+    ./scripts/Initialize-Database.ps1 -LicenseFile $license -Configuration Release -NoContinuousIntegration # CI workflow
 #>
 [CmdletBinding()]
 param (
@@ -60,6 +61,10 @@ param (
 
     # Do nothing when the database is ready; apply the Xperience update when it is behind the application
     [switch]$IfNotReady,
+
+    # Restore the CI repository but leave Continuous Integration disabled, e.g. for e2e test runs that
+    # should not write to the repository (concurrent CI-tracked saves can deadlock)
+    [switch]$NoContinuousIntegration,
 
     [ValidateSet('UserSecrets', 'Salt', 'AppSettings', 'None')]
     [string]$SaveTo = $(if ($env:CI) { 'AppSettings' } else { 'UserSecrets' })
@@ -212,13 +217,17 @@ finally {
 }
 
 # Objects from the committed Continuous Integration repository, then CI on so changes are written back to it
+# (off with -NoContinuousIntegration)
 if (Test-Path (Join-Path $project 'App_Data/CIRepository/repository.config')) {
     Write-Host 'Restoring the Continuous Integration repository (examples/DancingGoat/App_Data/CIRepository)'
     Invoke-DancingGoatCli @('--kxp-ci-restore')
     if ($LASTEXITCODE -ne 0) { throw "Continuous Integration restore failed ($LASTEXITCODE). Is DancingGoat built in $Configuration?" }
-    $enabled = Invoke-DancingGoatCli @('--kxp-ci-enable', '--format', 'json') | Select-Object -Last 1 | ConvertFrom-Json
-    if (-not $enabled.success) { throw "Enabling Continuous Integration failed: $($enabled.message)" }
-    Write-Host $enabled.message
+    $command = if ($NoContinuousIntegration) { '--kxp-ci-disable' } else { '--kxp-ci-enable' }
+    $output = Invoke-DancingGoatCli @($command, '--format', 'json')
+    # The JSON result is the last line that starts with "{" (log lines can come before or after it)
+    $result = $output | Where-Object { $_ -match '^\s*\{' } | Select-Object -Last 1 | ConvertFrom-Json
+    if (-not $result.success) { throw "Setting Continuous Integration ($command) failed: $($result.message)" }
+    Write-Host $result.message
 }
 
 Write-Host "Database ready. Sign in at /admin as 'administrator'."
