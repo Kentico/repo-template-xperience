@@ -168,7 +168,9 @@ jobs:
           dotnet restore --locked-mode
           dotnet build --configuration Release --no-restore
 
-      # Restores examples/DancingGoat/App_Data/CIRepository with the Release build's Xperience CLI
+      # Restores examples/DancingGoat/App_Data/CIRepository with the Release build's Xperience CLI and leaves
+      # Xperience Continuous Integration off: test runs must not write to the repository, and concurrent
+      # CI-tracked saves can deadlock
       - name: Create database
         if: env.HAS_LICENSE == 'true'
         env:
@@ -176,7 +178,7 @@ jobs:
         run: |
           $license = Join-Path $env:RUNNER_TEMP 'xperience-license.txt'
           Set-Content $license $env:XPERIENCE_LICENSE_KEY -NoNewline
-          ./scripts/Initialize-Database.ps1 -LicenseFile $license -Configuration Release
+          ./scripts/Initialize-Database.ps1 -LicenseFile $license -Configuration Release -NoContinuousIntegration
           Remove-Item $license
 
       - name: Install Playwright
